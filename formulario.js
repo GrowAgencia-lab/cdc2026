@@ -253,12 +253,11 @@ function bindEventos() {
   ['tiempo-min', 'tiempo-seg'].forEach(id => $(id).addEventListener('input', revisarTiempo));
 
   // Catastro
-  document.querySelectorAll('.catastro-tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
-  $('btn-buscar-ci').addEventListener('click', buscarCI);
-  $('btn-buscar-nombre').addEventListener('click', buscarNombre);
-  $('ci-buscar').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarCI(); } });
-  $('nombre-buscar').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarNombre(); } });
-  $('btn-nuevo').addEventListener('click', () => mostrarFormNuevo({}, -1));
+  $('btn-guardar-part').addEventListener('click', guardarParticipante);
+  $('btn-cancelar-edit').addEventListener('click', limpiarCarga);
+  ['np-nombre', 'np-doc', 'np-fnac'].forEach(id => $(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); if (id === 'np-nombre') $('np-doc').focus(); else guardarParticipante(); }
+  }));
 
   // Archivos
   bindArchivo('file-musica', 'area-musica', 'nombre-musica', 'musica');
@@ -345,19 +344,15 @@ function validar(p) {
   }
   if (p === 3) {
     const t = tipoSel();
-    if (editandoIdx !== -1 || $('nuevo-form-wrap').innerHTML) {
-      toast('Terminá de guardar (o cancelá) el participante que estás cargando');
+    if (editandoIdx !== -1 || val('np-nombre') || val('np-doc')) {
+      toast('Tenés un participante a medio cargar: tocá "Agregar" o borrá los campos');
+      $('form-part').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return false;
     }
     if (!t) { toast('Primero elegí el tipo de participación'); return false; }
     const n = participantes.length;
     if (n < t.min || n > t.max) {
       toast(t.t + ' requiere ' + rangoTxt(t) + '. Cargaste ' + n + '.', 4500);
-      ok = false;
-    }
-    const sinFecha = participantes.filter(x => !x.fnac);
-    if (ok && sinFecha.length) {
-      toast('Falta la fecha de nacimiento de: ' + sinFecha.map(x => x.nombre.split(' ')[0]).join(', ') + ' (tocá ✏️)', 5000);
       ok = false;
     }
   }
@@ -383,16 +378,8 @@ function rangoTxt(t) {
 }
 
 /* =============================================================
- *  PARTICIPANTES / CATASTRO
+ *  PARTICIPANTES (carga directa, sin buscador)
  * ============================================================= */
-function setTab(tab) {
-  document.querySelectorAll('.catastro-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  $('tab-ci').style.display = tab === 'ci' ? 'flex' : 'none';
-  $('tab-nombre').style.display = tab === 'nombre' ? 'flex' : 'none';
-  $('resultado-busqueda').innerHTML = '';
-  (tab === 'ci' ? $('ci-buscar') : $('nombre-buscar')).focus();
-}
-
 function pintarObjetivo() {
   const t = tipoSel();
   const n = participantes.length;
@@ -403,139 +390,66 @@ function pintarObjetivo() {
     '<span style="color:' + (ok ? 'var(--ok)' : 'var(--warn)') + ';font-weight:700;white-space:nowrap">' + (ok ? '✓ ' : '') + n + ' cargado' + (n === 1 ? '' : 's') + '</span>';
 }
 
-function yaEnLista(doc) { const k = normDoc(doc); return k && participantes.some(p => normDoc(p.documento) === k); }
-
-async function buscarCI() {
-  const ci = val('ci-buscar');
-  const out = $('resultado-busqueda');
-  if (normDoc(ci).length < 4) { toast('Ingresá un número de documento válido'); return; }
-  if (yaEnLista(ci)) { out.innerHTML = '<div class="result found">✓ Esa persona ya está en la lista.</div>'; return; }
-  $('btn-buscar-ci').disabled = true;
-  out.innerHTML = '<div class="vacio"><span class="spinner"></span>Buscando…</div>';
-  try {
-    const j = await apiGet({ accion: 'buscarCI', ci: ci });
-    if (j.ok && j.encontrado) out.innerHTML = '<div class="result found">' + filaPersona(j.persona) + '</div>';
-    else noEncontrado(ci, '');
-  } catch (e) {
-    noEncontrado(ci, '');
-  } finally { $('btn-buscar-ci').disabled = false; }
-}
-
-async function buscarNombre() {
-  const q = val('nombre-buscar');
-  const out = $('resultado-busqueda');
-  if (q.length < 3) { toast('Escribí al menos 3 letras'); return; }
-  $('btn-buscar-nombre').disabled = true;
-  out.innerHTML = '<div class="vacio"><span class="spinner"></span>Buscando…</div>';
-  try {
-    const j = await apiGet({ accion: 'buscarNombre', q: q });
-    if (j.ok && j.resultados && j.resultados.length) {
-      out.innerHTML = '<div class="result found">' + j.resultados.map(filaPersona).join('') + '</div>';
-    } else noEncontrado('', q);
-  } catch (e) {
-    noEncontrado('', q);
-  } finally { $('btn-buscar-nombre').disabled = false; }
-}
-
-let RESULTADOS = {};
-function filaPersona(p) {
-  const key = 'r' + Math.random().toString(36).slice(2, 9);
-  RESULTADOS[key] = p;
-  const fnac = aISO(p.fnac);
-  const edad = edadAlEvento(fnac);
-  const dentro = yaEnLista(p.documento);
-  return '<div class="p-row"><div class="avatar">' + esc(iniciales(p.nombre)) + '</div>' +
-    '<div class="p-info"><div class="p-nombre">' + esc(p.nombre) + '</div>' +
-    '<div class="p-detalle">Doc. ' + esc(p.documento) + (edad !== '' ? ' · ' + edad + ' años' : ' · sin fecha de nac.') + (p.academia ? ' · ' + esc(p.academia) : '') + '</div></div>' +
-    '<button type="button" class="btn-add" ' + (dentro ? 'disabled' : '') + ' onclick="agregarDeCatastro(\'' + key + '\')">' + (dentro ? '✓ Agregado' : '+ Agregar') + '</button></div>';
-}
-
-function noEncontrado(ci, nombre) {
-  $('resultado-busqueda').innerHTML = '<div class="result nf">No encontramos a ' + (ci ? 'ese documento' : '"' + esc(nombre) + '"') +
-    ' en el registro. <a href="#" style="color:var(--gold-l);font-weight:700" onclick="event.preventDefault();mostrarFormNuevo({documento:\'' + esc(ci) + '\',nombre:\'' + esc(nombre).replace(/'/g, '') + '\'},-1)">Registrarlo/a como nuevo/a →</a></div>';
-}
-
-function agregarDeCatastro(key) {
-  const p = RESULTADOS[key];
-  if (!p) return;
-  if (yaEnLista(p.documento)) { toast('Ya está en la lista'); return; }
-  if (!hayLugar()) return;
-  const fnac = aISO(p.fnac);
-  const nuevo = { nombre: p.nombre, documento: p.documento, fnac: fnac, edad: edadAlEvento(fnac), nuevo: false };
-  const palabras = p.nombre.trim().split(/\s+/).length;
-  $('resultado-busqueda').innerHTML = '';
-  $('ci-buscar').value = ''; $('nombre-buscar').value = '';
-  if (!fnac || palabras < 3) {
-    // Pedir completar datos antes de agregar
-    mostrarFormNuevo(nuevo, -2, !fnac ? 'Completá la fecha de nacimiento' : 'Verificá que tenga ambos nombres y apellidos');
-    return;
-  }
-  participantes.push(nuevo);
-  pintarLista();
-  toast('✓ ' + p.nombre + ' agregado/a');
-}
-
 function hayLugar() {
   const t = tipoSel();
   if (t && participantes.length >= t.max) { toast(t.t + ': máximo ' + rangoTxt(t)); return false; }
   return true;
 }
 
-/* idx: -1 nuevo · -2 completar uno del catastro · >=0 editar existente */
-function mostrarFormNuevo(datos, idx, aviso) {
-  if (idx === -1 && !hayLugar()) return;
-  editandoIdx = idx;
-  datos = datos || {};
-  const titulo = idx >= 0 ? 'Editar participante' : idx === -2 ? 'Completar datos' : 'Nuevo participante';
-  $('nuevo-form-wrap').innerHTML =
-    '<div class="nuevo-form"><h4>' + titulo + '</h4>' +
-    (aviso ? '<div class="warn-box" style="margin-bottom:.7rem">' + esc(aviso) + '</div>' : '') +
-    '<div class="campo"><label>Nombre completo <span class="req">*</span></label>' +
-    '<input type="text" id="np-nombre" value="' + esc(datos.nombre || '') + '" placeholder="Ambos nombres y ambos apellidos"/></div>' +
-    '<div class="grid2"><div class="campo"><label>Documento (CI / DNI / Pasaporte) <span class="req">*</span></label>' +
-    '<input type="text" id="np-doc" value="' + esc(datos.documento || '') + '" ' + (idx === -2 ? 'readonly' : '') + ' placeholder="Sin puntos"/></div>' +
-    '<div class="campo"><label>Fecha de nacimiento <span class="req">*</span></label>' +
-    '<input type="date" id="np-fnac" value="' + esc(datos.fnac || '') + '" max="2026-12-31" min="1930-01-01"/></div></div>' +
-    '<div class="nuevo-btns"><button type="button" class="btn-prev" onclick="cancelarNuevo()">Cancelar</button>' +
-    '<button type="button" class="btn-sm" onclick="guardarNuevo()">' + (idx >= 0 ? 'Guardar cambios' : '+ Agregar a la lista') + '</button></div></div>';
-  $('btn-nuevo').style.display = 'none';
-  setTimeout(() => { const f = $('np-nombre'); f.focus(); f.closest('.nuevo-form').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
-}
-
-function cancelarNuevo() {
+function limpiarCarga() {
   editandoIdx = -1;
-  $('nuevo-form-wrap').innerHTML = '';
-  $('btn-nuevo').style.display = 'block';
+  ['np-nombre', 'np-doc', 'np-fnac'].forEach(id => $(id).value = '');
+  $('carga-titulo').textContent = 'Agregar participante';
+  $('btn-guardar-part').textContent = '+ Agregar a la lista';
+  $('btn-cancelar-edit').style.display = 'none';
 }
 
-function guardarNuevo() {
+function cargarEnFormulario(i) {
+  const p = participantes[i];
+  editandoIdx = i;
+  $('np-nombre').value = p.nombre;
+  $('np-doc').value = p.documento;
+  $('np-fnac').value = p.fnac || '';
+  $('carga-titulo').textContent = 'Editando participante ' + (i + 1);
+  $('btn-guardar-part').textContent = 'Guardar cambios';
+  $('btn-cancelar-edit').style.display = 'block';
+  $('form-part').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => $('np-nombre').focus(), 250);
+}
+
+function guardarParticipante() {
   const nombre = val('np-nombre').replace(/\s+/g, ' ');
   const doc = val('np-doc');
   const fnac = val('np-fnac');
+  if (!nombre && !doc && !fnac && editandoIdx === -1) return;
   if (nombre.split(' ').length < 2) { toast('Ingresá nombre y apellido completos'); $('np-nombre').focus(); return; }
-  if (normDoc(doc).length < 4) { toast('Ingresá un documento válido'); $('np-doc').focus(); return; }
-  if (!fnac) { toast('Ingresá la fecha de nacimiento'); $('np-fnac').focus(); return; }
-  const edad = edadAlEvento(fnac);
-  if (edad === '') { toast('Revisá la fecha de nacimiento'); return; }
+  if (normDoc(doc).length < 4) { toast('Ingresá el número de documento'); $('np-doc').focus(); return; }
+  const edad = fnac ? edadAlEvento(fnac) : '';
+  if (fnac && edad === '') { toast('Revisá la fecha de nacimiento'); $('np-fnac').focus(); return; }
   const dup = participantes.findIndex((p, i) => normDoc(p.documento) === normDoc(doc) && i !== editandoIdx);
-  if (dup > -1) { toast('Ese documento ya está en la lista'); return; }
+  if (dup > -1) { toast('Ese documento ya está en la lista'); $('np-doc').focus(); return; }
+  if (editandoIdx === -1 && !hayLugar()) return;
 
   const nombreTitulo = nombre.toLowerCase().replace(/(^|\s|-)\S/g, c => c.toUpperCase());
   if (editandoIdx >= 0) {
     Object.assign(participantes[editandoIdx], { nombre: nombreTitulo, documento: doc, fnac: fnac, edad: edad });
+    toast('✓ Cambios guardados');
   } else {
-    participantes.push({ nombre: nombreTitulo, documento: doc, fnac: fnac, edad: edad, nuevo: editandoIdx === -1 });
+    participantes.push({ nombre: nombreTitulo, documento: doc, fnac: fnac, edad: edad });
+    toast('✓ ' + nombreTitulo + ' agregado/a');
   }
-  cancelarNuevo();
+  limpiarCarga();
   pintarLista();
-  toast('✓ ' + nombreTitulo + ' guardado/a');
+  $('np-nombre').focus();
 }
 
 function quitar(i) {
+  if (editandoIdx === i) limpiarCarga();
+  else if (editandoIdx > i) editandoIdx--;
   participantes.splice(i, 1);
   pintarLista();
 }
-function editar(i) { mostrarFormNuevo(participantes[i], i); }
+function editar(i) { cargarEnFormulario(i); }
 
 function pintarLista() {
   const cat = catSel();
@@ -546,8 +460,7 @@ function pintarLista() {
     '<div class="lista-main"><div class="lista-nombre">' + esc(p.nombre) + '</div>' +
     '<div class="lista-sub">Doc. ' + esc(p.documento) + (p.fnac ? ' · ' + fechaLinda(p.fnac) : '') + '</div></div>' +
     (p.edad !== '' ? '<span class="tag ' + (fuera(p) ? 'tag-fuera' : 'tag-edad') + '">' + p.edad + ' años</span>' : '') +
-    (p.nuevo ? '<span class="tag tag-nuevo">nuevo</span>' : '') +
-    '<button type="button" class="icon-btn" title="Editar" onclick="editar(' + i + ')">✏️</button>' +
+        '<button type="button" class="icon-btn" title="Editar" onclick="editar(' + i + ')">✏️</button>' +
     '<button type="button" class="icon-btn del" title="Quitar" onclick="quitar(' + i + ')">✕</button></div>'
   ).join('') : '<div class="vacio">Todavía no agregaste participantes</div>';
 
@@ -766,7 +679,7 @@ function exito(r, datos) {
 
 function otraObra() {
   // Mantiene los datos de la academia (paso 1), limpia el resto
-  ['obra', 'modalidad-otra', 'coreografo', 'preparador', 'contacto-resp', 'tiempo-min', 'tiempo-seg', 'esceno-desc', 'observaciones', 'ci-buscar', 'nombre-buscar']
+  ['obra', 'modalidad-otra', 'coreografo', 'preparador', 'contacto-resp', 'tiempo-min', 'tiempo-seg', 'esceno-desc', 'observaciones']
     .forEach(id => { $(id).value = ''; });
   $('modalidad').value = ''; $('modalidad').dispatchEvent(new Event('change'));
   document.querySelectorAll('input[name="categoria"],input[name="tipo"],input[name="forma-pago"]').forEach(r => r.checked = false);
@@ -778,8 +691,7 @@ function otraObra() {
   $('bloque-banco').style.display = 'none'; $('bloque-efectivo').style.display = 'none';
   ['chk-reglamento', 'chk-imagen', 'chk-datos'].forEach(id => { $(id).classList.remove('on'); $(id).setAttribute('aria-checked', 'false'); });
   participantes = [];
-  cancelarNuevo();
-  $('resultado-busqueda').innerHTML = '';
+  limpiarCarga();
   $('aviso-tiempo').innerHTML = '';
   pintarLista();
   $('exito').style.display = 'none';
