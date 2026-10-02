@@ -362,25 +362,31 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
   <div class="sec-body">
     <div class="info-box">
       <span class="tit">👥 Lista de participantes</span>
-      Buscá a cada bailarín/a por <strong>documento</strong> o por <strong>nombre</strong> y agregalo/a. Si no aparece, registralo/a como nuevo/a con su <strong>nombre completo (ambos nombres y ambos apellidos)</strong>. Esta lista se usa también para los <strong>certificados de participación</strong>.
+      Cargá a cada bailarín/a con su <strong>nombre completo (ambos nombres y ambos apellidos)</strong> y su número de documento, y tocá <strong>Agregar</strong>. Repetí hasta completar la lista. Esta lista se usa también para los <strong>certificados de participación</strong>.
     </div>
     <div class="cnt-objetivo" id="cnt-objetivo"></div>
     <div class="catastro-box">
-      <div class="catastro-tabs">
-        <button type="button" class="catastro-tab active" data-tab="ci">🪪 Por documento</button>
-        <button type="button" class="catastro-tab" data-tab="nombre">🔤 Por nombre</button>
+      <div class="nuevo-form" id="form-part" style="margin-bottom:.9rem">
+        <h4 id="carga-titulo">Agregar participante</h4>
+        <div class="campo">
+          <label for="np-nombre">Nombre completo <span class="req">*</span></label>
+          <input type="text" id="np-nombre" placeholder="Ambos nombres y ambos apellidos" autocomplete="off"/>
+        </div>
+        <div class="grid2">
+          <div class="campo">
+            <label for="np-doc">CI / DNI / Pasaporte <span class="req">*</span></label>
+            <input type="text" id="np-doc" placeholder="Sin puntos" autocomplete="off"/>
+          </div>
+          <div class="campo">
+            <label for="np-fnac">Fecha de nacimiento</label>
+            <input type="date" id="np-fnac" min="1930-01-01" max="2026-12-31"/>
+          </div>
+        </div>
+        <div class="nuevo-btns">
+          <button type="button" class="btn-prev" id="btn-cancelar-edit" style="display:none">Cancelar</button>
+          <button type="button" class="btn-sm" id="btn-guardar-part" style="padding:.75rem">+ Agregar a la lista</button>
+        </div>
       </div>
-      <div id="tab-ci" class="catastro-search">
-        <input type="text" id="ci-buscar" placeholder="Nº de CI / DNI / Pasaporte" inputmode="text" autocomplete="off"/>
-        <button type="button" class="btn-sm" id="btn-buscar-ci">Buscar</button>
-      </div>
-      <div id="tab-nombre" class="catastro-search" style="display:none">
-        <input type="text" id="nombre-buscar" placeholder="Nombre o apellido…" autocomplete="off"/>
-        <button type="button" class="btn-sm" id="btn-buscar-nombre">Buscar</button>
-      </div>
-      <div id="resultado-busqueda"></div>
-      <div id="nuevo-form-wrap"></div>
-      <button type="button" class="btn-ghost" id="btn-nuevo">+ Registrar participante nuevo</button>
       <div class="lista-header"><span>Agregados</span><span class="badge" id="lista-count">0</span></div>
       <div id="lista-items"></div>
       <div id="aviso-edades"></div>
@@ -571,6 +577,6 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 
 <div class="toast" id="toast"></div>
 
-<script src="formulario.js"></script>
+<script src="formulario.js?v=3"></script>
 </body>
 </html>
