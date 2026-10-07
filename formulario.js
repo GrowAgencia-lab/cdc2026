@@ -20,7 +20,7 @@ let CONFIG = {
   sede: 'Gran Asunción',
   fechaEvento: '2026-11-22',
   fechaTexto: '22 de Noviembre 2026',
-  lugar: 'Teatro "Pedro Moliniers"',
+  lugar: 'Teatro Municipal de Fernando de la Mora',
   costos: { solista: 120000, duo: 100000, trio: 90000, cuarteto: 80000, grupo_a: 70000, grupo_b: 60000, conjunto: 50000, coreografia: 100000 },
   banco: {},
   whatsapp: '595971588475',
@@ -173,6 +173,7 @@ async function cargarConfig() {
   $('lbl-coreo').textContent = '+ ' + gs(CONFIG.costos.coreografia);
   pintarCostos();
   pintarBanco();
+  pintarTurnos();
   if (!CONFIG.abiertas) {
     const b = $('cerrado-banner');
     b.textContent = '🔒 ' + (CONFIG.mensajeCierre || 'Las inscripciones están cerradas.');
@@ -239,6 +240,7 @@ function bindEventos() {
     const n = e.target.name;
     if (n === 'tipo') { pintarObjetivo(); pintarCostos(); pintarTiempoMax(); revisarTiempo(); limpiarErr('tipo'); }
     if (n === 'categoria') { pintarLista(); limpiarErr('categoria'); }
+    if (n === 'turno') limpiarErr('turno');
     if (n === 'compite') pintarCostos();
     if (n === 'tipo-musica') $('bloque-mp3').style.display = radio('tipo-musica') === 'mp3' ? 'block' : 'none';
     if (n === 'esceno') $('bloque-esceno').style.display = radio('esceno') === 'si' ? 'block' : 'none';
@@ -341,6 +343,7 @@ function validar(p) {
     if (m && MODALIDADES[m] === null) req('modalidad-otra', 'Especificá la modalidad');
     if (!radio('categoria')) ok = errSpan('categoria', 'Elegí una categoría');
     if (!radio('tipo')) ok = errSpan('tipo', 'Elegí el tipo de participación');
+    if (!radio('turno')) ok = errSpan('turno', 'Elegí el turno');
   }
   if (p === 3) {
     const t = tipoSel();
@@ -550,6 +553,24 @@ function pintarCostos() {
   $('monto-detalle').textContent = m.detalle;
 }
 
+function pintarTurnos() {
+  const tu = CONFIG.turnos || {};
+  const actual = radio('turno');
+  $('pills-turno').innerHTML = ['Mañana', 'Tarde'].map(t => {
+    const x = tu[t] || {};
+    const icono = t === 'Mañana' ? '☀️' : '🌙';
+    let info = '';
+    if (x.lleno) info = 'Completo';
+    else if (x.cupo > 0) info = 'quedan ' + Math.max(0, x.cupo - x.usados);
+    return '<label class="pill"><input type="radio" name="turno" value="' + t + '"' + (x.lleno ? ' disabled' : '') + (actual === t && !x.lleno ? ' checked' : '') + '/>' +
+      '<span>' + icono + ' Turno ' + t.toLowerCase() + (info ? ' <small>' + info + '</small>' : '') + '</span></label>';
+  }).join('');
+  const lleno = ['Mañana', 'Tarde'].filter(t => tu[t] && tu[t].lleno);
+  $('hint-turno').textContent = lleno.length
+    ? 'El turno ' + lleno.join(' y ').toLowerCase() + ' ya completó su cupo.'
+    : 'Elegí en qué turno querés presentar la obra. Los cupos son limitados.';
+}
+
 function pintarBanco() {
   const b = CONFIG.banco || {};
   const wa = CONFIG.whatsapp ? '+' + CONFIG.whatsapp : '';
@@ -577,7 +598,7 @@ function pintarResumen() {
   const filas = [
     ['Academia', val('academia')], ['Obra', val('obra')],
     ['Modalidad', modalidadTxt() + (val('estilo') ? ' — ' + val('estilo') : '')],
-    ['Categoría', c ? c.t : ''], ['Tipo', t ? t.label : ''], ['Participantes', participantes.length],
+    ['Categoría', c ? c.t : ''], ['Turno', radio('turno')], ['Tipo', t ? t.label : ''], ['Participantes', participantes.length],
     ['Coreógrafo/a', val('coreografo')], ['Compite por coreografía', radio('compite') === 'si' ? 'Sí' : 'No'],
     ['Música', tm + ' · ' + duracionTxt()], ['Forma de pago', radio('forma-pago')], ['Total', gs(m.total)]
   ];
@@ -637,7 +658,7 @@ async function enviar() {
       accion: 'inscribir',
       email: val('email'), academia: val('academia'), director: val('director'), telefono: val('telefono'), ciudad: val('ciudad'),
       obra: val('obra'), modalidad: modalidadTxt(), estilo: val('estilo'),
-      categoria: catSel().t, tipo: radio('tipo'),
+      categoria: catSel().t, tipo: radio('tipo'), turno: radio('turno'),
       coreografo: val('coreografo'), preparador: val('preparador'), contactoResp: val('contacto-resp'),
       compiteCoreo: radio('compite'),
       participantes: participantes.map(p => ({ nombre: p.nombre, documento: p.documento, fnac: p.fnac, edad: p.edad })),
@@ -646,6 +667,13 @@ async function enviar() {
       formaPago: fp, comprobante: comprobante, observaciones: val('observaciones')
     };
     const r = await apiPost(datos, 1);
+    if (r && r.turnoLleno) {
+      await cargarConfig();
+      mostrar(2);
+      errSpan('turno', r.error);
+      toast('⚠️ ' + r.error, 7000);
+      return;
+    }
     if (!r || !r.ok) throw new Error((r && r.error) || 'No se pudo guardar la inscripción');
     exito(r, datos);
   } catch (e) {
@@ -682,7 +710,7 @@ function otraObra() {
   ['obra', 'modalidad-otra', 'coreografo', 'preparador', 'contacto-resp', 'tiempo-min', 'tiempo-seg', 'esceno-desc', 'observaciones']
     .forEach(id => { $(id).value = ''; });
   $('modalidad').value = ''; $('modalidad').dispatchEvent(new Event('change'));
-  document.querySelectorAll('input[name="categoria"],input[name="tipo"],input[name="forma-pago"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input[name="categoria"],input[name="tipo"],input[name="turno"],input[name="forma-pago"]').forEach(r => r.checked = false);
   document.querySelector('input[name="compite"][value="no"]').checked = true;
   document.querySelector('input[name="tipo-musica"][value="pendrive"]').checked = true;
   document.querySelector('input[name="esceno"][value="no"]').checked = true;
