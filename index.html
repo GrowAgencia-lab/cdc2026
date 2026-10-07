@@ -93,6 +93,8 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 .pill span small{color:var(--muted);font-weight:500;margin-left:.2rem}
 .pill input:checked+span{background:var(--grad-gold);color:#1A1306;border-color:var(--gold)}
 .pill input:checked+span small{color:#4A3610}
+.pill input:disabled+span{opacity:.4;cursor:not-allowed}
+.pill input:disabled+span small{color:var(--err)}
 .pill input:focus-visible+span{box-shadow:0 0 0 3px rgba(212,165,55,.35)}
 
 /* CATASTRO */
@@ -234,7 +236,7 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
   <div class="kicker">Circuito Latinoamericano de Danza</div>
   <h1 class="gold-text">CUP Dance Competition 2026</h1>
   <div class="sede">Formulario de inscripción · Sede <span id="h-sede">Gran Asunción</span></div>
-  <div class="fechas">📅 <span id="h-fecha">22 de Noviembre 2026</span> · <span id="h-lugar">Teatro "Pedro Moliniers"</span></div>
+  <div class="fechas">📅 <span id="h-fecha">22 de Noviembre 2026</span> · <span id="h-lugar">Teatro Municipal de Fernando de la Mora</span></div>
 </header>
 
 <div class="cerrado-banner" id="cerrado-banner"></div>
@@ -324,6 +326,12 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
       <label>Tipo de participación <span class="req">*</span></label>
       <div class="pills" id="pills-tipo"></div>
       <span class="err-msg" id="err-tipo" style="display:none"></span>
+    </div>
+    <div class="campo">
+      <label>Turno <span class="req">*</span></label>
+      <div class="pills" id="pills-turno"></div>
+      <span class="hint" id="hint-turno">Elegí en qué turno querés presentar la obra. Los cupos son limitados.</span>
+      <span class="err-msg" id="err-turno" style="display:none"></span>
     </div>
     <div class="grid2">
       <div class="campo">
@@ -577,6 +585,6 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 
 <div class="toast" id="toast"></div>
 
-<script src="formulario.js?v=3"></script>
+<script src="formulario.js?v=5"></script>
 </body>
 </html>
