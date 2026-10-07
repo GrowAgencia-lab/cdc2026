@@ -154,6 +154,8 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
 .orden-list{display:grid;gap:.35rem}
 .o-item{display:grid;grid-template-columns:28px 54px 64px minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) 46px auto;gap:.6rem;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.5rem .6rem;font-size:.8rem}
 .o-item.dim{opacity:.25}
+.o-item.grupo{margin-top:.9rem;position:relative}
+.o-item.grupo::before{content:attr(data-grupo);position:absolute;top:-1.15rem;left:.2rem;font-size:.66rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .o-item.hit{border-color:var(--gold);box-shadow:0 0 0 2px rgba(212,165,55,.25)}
 .o-item.conflicto{box-shadow:inset 4px 0 0 var(--warn)}
 .o-item.sortable-ghost{opacity:.35;border-style:dashed;border-color:var(--gold)}
@@ -264,7 +266,14 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <label>Inicio tarde <input type="time" id="o-inicio-tarde" value="14:00"/></label>
         <label>Transición <input type="number" id="o-trans" value="20" min="0" max="300"/> seg</label>
         <label>Separación <input type="number" id="o-sep" value="4" min="0" max="30" title="Avisa si un mismo bailarín se repite a menos de esta cantidad de obras"/> obras</label>
-        <button class="btn-line" id="o-agrupar" title="Pone todas las de la mañana primero y las de la tarde después, sin cambiar el orden dentro de cada turno">☀️/🌙 Agrupar por turno</button>
+        <select id="o-criterio" title="Prioridad del orden automático" style="padding:.45rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.8rem">
+          <option value="tmct">Turno › Modalidad › Categoría › Tipo</option>
+          <option value="tcmt">Turno › Categoría › Modalidad › Tipo</option>
+          <option value="tmtc">Turno › Modalidad › Tipo › Categoría</option>
+          <option value="mct">Modalidad › Categoría › Tipo (sin turno)</option>
+        </select>
+        <button class="btn-line" id="o-auto" title="Reordena todas las obras según la prioridad elegida">⚡ Ordenar automático</button>
+        <button class="btn-line" id="o-agrupar" title="Pone todas las de la mañana primero y las de la tarde después, sin cambiar el orden dentro de cada turno">☀️/🌙 Solo agrupar turno</button>
         <input type="search" id="o-buscar" placeholder="Buscar en el orden…"/>
         <span class="sin-guardar hidden" id="o-dirty">⚠️ Cambios sin guardar</span>
         <button class="btn" id="o-guardar">💾 Guardar orden</button>
@@ -285,6 +294,13 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyT46Od1IKUY7RYhbDP
 
 const TIPOS_ORDEN = ['Solista', 'Dúo', 'Trío', 'Cuarteto', 'Grupo Serie A', 'Grupo Serie B', 'Conjunto'];
 const CATS_ORDEN = ['Baby', 'Pre Infantil', 'Infantil', 'Juvenil', 'Mayores', 'Profesional', 'Aficionado'];
+const MODS_ORDEN = ['Danza Clásica', 'Danza Neoclásica', 'Contemporáneo', 'Técnica Libre', 'Danza Jazz', 'Acrodance', 'Danza Paraguaya', 'Danza Española', 'Danza Argentina', 'Folclore Mundial', 'Danzas Árabes y Bellydance', 'Ritmos Urbanos', 'Show'];
+const CRITERIOS = {
+  'tmct': ['turno', 'modalidad', 'categoria', 'tipo'],
+  'tcmt': ['turno', 'categoria', 'modalidad', 'tipo'],
+  'tmtc': ['turno', 'modalidad', 'tipo', 'categoria'],
+  'mct':  ['modalidad', 'categoria', 'tipo']
+};
 
 let CLAVE = '';
 let DATA = null;          // respuesta completa
@@ -636,7 +652,9 @@ function pintarOrden() {
     const i = INSC.find(x => x.id === id) || { obra: id, academia: '', participantes: [] };
     const c = conf[id];
     const hit = q && norm([i.obra, i.academia, i.coreografo, i.id, i.modalidad, i.categoria].join(' ')).indexOf(q) > -1;
-    return '<div class="o-item' + (c ? ' conflicto' : '') + (q ? (hit ? ' hit' : ' dim') : '') + '" data-id="' + esc(id) + '">' +
+    const g = grupoDe(i), gPrev = n ? grupoDe(INSC.find(x => x.id === ORDEN[n - 1]) || {}) : null;
+    const nuevoGrupo = g !== gPrev;
+    return '<div class="o-item' + (c ? ' conflicto' : '') + (q ? (hit ? ' hit' : ' dim') : '') + (nuevoGrupo ? ' grupo' : '') + '" data-id="' + esc(id) + '"' + (nuevoGrupo ? ' data-grupo="' + esc(g) + '"' : '') + '>' +
       '<span class="handle" title="Arrastrar">⋮⋮</span>' +
       '<input class="o-pos" type="number" min="1" max="' + ORDEN.length + '" value="' + (n + 1) + '" data-id="' + esc(id) + '" title="Escribí el número y Enter para mover"/>' +
       '<span class="o-hora">' + horas[id] + '</span>' +
@@ -676,6 +694,34 @@ function mezcla() {
   }
   return false;
 }
+function grupoDe(i) {
+  const crit = CRITERIOS[$('o-criterio').value] || CRITERIOS.tmct;
+  return crit.slice(0, 3).map(k => k === 'tipo' ? tipoCorto(i.tipo) : (i[k] || '—')).join(' · ');
+}
+function rankLista(lista, v) { const n = lista.indexOf(v); return n < 0 ? 900 : n; }
+function claveOrden(i, k) {
+  if (k === 'turno') return i.turno === 'Mañana' ? 0 : i.turno === 'Tarde' ? 1 : 2;
+  if (k === 'categoria') return rankLista(CATS_ORDEN, i.categoria);
+  if (k === 'tipo') return rankLista(TIPOS_ORDEN, tipoCorto(i.tipo));
+  if (k === 'modalidad') { const r = rankLista(MODS_ORDEN, i.modalidad); return r === 900 ? 900 + norm(i.modalidad) : r; }
+  return 0;
+}
+function cmp(a, b) { return typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b)); }
+$('o-criterio').addEventListener('change', () => { try { localStorage.setItem('cdc_o-criterio', $('o-criterio').value); } catch (e) {} pintarOrden(); });
+try { const v = localStorage.getItem('cdc_o-criterio'); if (v && CRITERIOS[v]) $('o-criterio').value = v; } catch (e) {}
+$('o-auto').addEventListener('click', () => {
+  if (!ORDEN.length) return;
+  if (!window.confirm('Esto reordena TODAS las obras por: ' + $('o-criterio').selectedOptions[0].text + '.\nEl orden manual actual se reemplaza (no se guarda hasta que toques Guardar). ¿Continuar?')) return;
+  const crit = CRITERIOS[$('o-criterio').value];
+  const info = id => INSC.find(x => x.id === id) || {};
+  ORDEN = ORDEN.map((id, n) => ({ id, n, i: info(id) }))
+    .sort((a, b) => { for (const k of crit) { const d = cmp(claveOrden(a.i, k), claveOrden(b.i, k)); if (d) return d; } return a.n - b.n; })
+    .map(x => x.id);
+  setDirty(true);
+  pintarOrden();
+  toast('⚡ Ordenado por ' + $('o-criterio').selectedOptions[0].text + '. Revisá y tocá Guardar.');
+});
+
 $('o-agrupar').addEventListener('click', () => {
   const rango = id => { const t = (INSC.find(x => x.id === id) || {}).turno; return t === 'Mañana' ? 0 : t === 'Tarde' ? 1 : 2; };
   const antes = ORDEN.join('|');
