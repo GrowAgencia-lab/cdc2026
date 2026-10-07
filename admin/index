@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Panel Admin — CUP Dance Competition 2026</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="icon" href="../logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--card2:#221E17;--line:#3A3122;--line2:#5A4A2A;
+  --gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;
+  --ok:#4ADE80;--err:#F87171;--warn:#FBBF24;--info:#60A5FA;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);
+  --disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;line-height:1.5;min-height:100vh}
+h1,h2,h3{font-family:var(--disp);letter-spacing:.5px;font-weight:600}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+.hidden{display:none!important}
+
+/* LOGIN */
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:radial-gradient(ellipse at 50% 0,rgba(212,165,55,.2),transparent 60%)}
+.login-card{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:2rem 1.5rem;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.login-card img{width:110px;margin-bottom:.6rem;filter:drop-shadow(0 6px 20px rgba(212,165,55,.4))}
+.login-card h1{font-size:1.4rem;text-transform:uppercase;margin-bottom:.2rem}
+.login-card p{color:var(--txt2);font-size:.82rem;margin-bottom:1.2rem}
+.login-card input{width:100%;padding:.75rem .9rem;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:1rem;margin-bottom:.8rem;text-align:center}
+.login-card input:focus{outline:none;border-color:var(--gold)}
+.login-err{color:var(--err);font-size:.8rem;min-height:1.2em;margin-bottom:.5rem}
+
+/* BOTONES */
+.btn{border:none;border-radius:10px;padding:.6rem 1rem;font-weight:700;font-size:.84rem;background:var(--grad);color:#1A1306;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-line{border:1.5px solid var(--line2);background:transparent;color:var(--gold-l);border-radius:10px;padding:.55rem .9rem;font-weight:700;font-size:.82rem;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem}
+.btn-line:hover{border-color:var(--gold)}
+.btn-block{width:100%;padding:.8rem}
+
+/* TOPBAR */
+.top{position:sticky;top:0;z-index:50;background:rgba(11,10,8,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1400px;margin:0 auto;padding:.6rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.6rem;margin-right:auto}
+.brand img{width:42px;height:42px}
+.brand b{font-family:var(--disp);font-size:1.05rem;letter-spacing:.5px;text-transform:uppercase;display:block;line-height:1.1}
+.brand span{font-size:.72rem;color:var(--txt2)}
+.tabs{display:flex;gap:.3rem;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:.25rem}
+.tab{border:none;background:transparent;color:var(--txt2);padding:.5rem .9rem;border-radius:9px;font-weight:700;font-size:.82rem}
+.tab.active{background:var(--grad);color:#1A1306}
+.top-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.top::after{content:'';display:block;height:2px;background:var(--grad)}
+
+main{max-width:1400px;margin:0 auto;padding:1.2rem 1rem 4rem}
+.sec-title{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.sec-title h2{font-size:1.4rem;text-transform:uppercase}
+.sec-title .sub{color:var(--txt2);font-size:.8rem}
+.cargando{text-align:center;color:var(--txt2);padding:3rem 1rem}
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(212,165,55,.25);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-4px;margin-right:.5rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PANELES */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;min-width:0}
+.panel h3{font-size:.95rem;text-transform:uppercase;color:var(--gold-l);margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.panel h3 small{font-family:var(--body);font-size:.72rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:1rem}
+@media(max-width:800px){.kpis{grid-template-columns:1fr 1fr}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(212,165,55,.14),transparent 60%)}
+.kpi .l{position:relative;font-size:.68rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--txt2);font-weight:700}
+.kpi .v{position:relative;font-family:var(--disp);font-size:2rem;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .s{position:relative;font-size:.72rem;color:var(--muted)}
+
+.grid-dash{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1rem}
+@media(max-width:1000px){.grid-dash{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.grid-dash{grid-template-columns:1fr}}
+
+/* BARRAS */
+.bar-row{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:.6rem;align-items:center;font-size:.8rem;padding:.22rem 0}
+.bar-row .n{color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:10px;background:var(--bg2);border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;background:var(--grad);border-radius:6px;min-width:2px}
+.bar-row .c{font-weight:700;color:var(--gold-l);font-variant-numeric:tabular-nums;min-width:2.2em;text-align:right}
+.bar-row .c small{color:var(--muted);font-weight:500}
+.vacio{color:var(--muted);text-align:center;padding:1.2rem .5rem;font-size:.85rem}
+
+/* TABLAS */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{position:sticky;top:0;background:#000;color:var(--gold-l);text-align:left;font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.6px;padding:.65rem .6rem;border-bottom:1px solid var(--line2);white-space:nowrap;cursor:pointer;user-select:none}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td{padding:.55rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:hover td{background:rgba(212,165,55,.05)}
+tr.click{cursor:pointer}
+tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
+.id{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--txt2);white-space:nowrap}
+.muted{color:var(--muted)}
+
+/* CHIPS */
+.chip{display:inline-block;padding:.12rem .5rem;border-radius:99px;font-size:.68rem;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.chip-pend{background:rgba(251,191,36,.12);color:var(--warn);border-color:rgba(251,191,36,.35)}
+.chip-pag{background:rgba(74,222,128,.12);color:var(--ok);border-color:rgba(74,222,128,.35)}
+.chip-par{background:rgba(96,165,250,.12);color:var(--info);border-color:rgba(96,165,250,.35)}
+.chip-anu{background:rgba(248,113,113,.12);color:var(--err);border-color:rgba(248,113,113,.35)}
+.chip-gold{background:rgba(212,165,55,.14);color:var(--gold-l);border-color:var(--line2)}
+.chip-man{background:rgba(251,191,36,.10);color:#FCD34D;border-color:rgba(251,191,36,.3)}
+.chip-tar{background:rgba(129,140,248,.12);color:#A5B4FC;border-color:rgba(129,140,248,.35)}
+.chip-new{background:rgba(96,165,250,.15);color:var(--info)}
+
+/* FILTROS */
+.filtros{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;align-items:center}
+.filtros input,.filtros select{padding:.55rem .75rem;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.82rem;min-width:0}
+.filtros input{flex:1 1 240px}
+.filtros select{flex:0 1 190px}
+.filtros input:focus,.filtros select:focus{outline:none;border-color:var(--gold)}
+.filtros select option{background:var(--card)}
+.contador{font-size:.78rem;color:var(--txt2);margin-left:auto}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+.modal{width:100%;max-width:760px;background:var(--card);border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.modal-head{background:#000;padding:1rem 1.2rem;display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;border-bottom:2px solid var(--gold-d)}
+.modal-head h3{font-size:1.3rem;text-transform:uppercase}
+.modal-head .x{background:none;border:none;color:var(--txt2);font-size:1.4rem;line-height:1}
+.modal-body{padding:1.1rem 1.2rem;display:grid;gap:1rem}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:.4rem 1.2rem;font-size:.82rem}
+@media(max-width:560px){.kv{grid-template-columns:1fr}}
+.kv div{display:flex;justify-content:space-between;gap:.8rem;border-bottom:1px dashed var(--line);padding:.25rem 0}
+.kv span:first-child{color:var(--txt2)}
+.kv span:last-child{font-weight:600;text-align:right;overflow-wrap:anywhere}
+.links{display:flex;gap:.5rem;flex-wrap:wrap}
+.part-list{list-style:none;display:grid;gap:.3rem;font-size:.82rem}
+.part-list li{display:flex;gap:.6rem;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:.4rem .6rem}
+.part-list .nn{color:var(--muted);font-family:var(--disp);min-width:1.4em}
+.part-list .nm{flex:1;font-weight:600}
+.estado-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.estado-row select{padding:.5rem .7rem;border-radius:10px;border:1.5px solid var(--line2);background:var(--bg2);color:var(--txt);font-weight:700}
+
+/* ORDEN */
+.orden-bar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.75rem .9rem;margin-bottom:.8rem;position:sticky;top:70px;z-index:20}
+.orden-bar label{font-size:.72rem;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:.4rem}
+.orden-bar input{padding:.45rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.85rem}
+.orden-bar input[type=number]{width:70px}
+.orden-bar input[type=search]{flex:1 1 200px;min-width:0}
+.sin-guardar{color:var(--warn);font-weight:700;font-size:.8rem}
+.orden-resumen{display:flex;gap:1rem;flex-wrap:wrap;font-size:.78rem;color:var(--txt2);margin-bottom:.6rem}
+.orden-resumen b{color:var(--gold-l)}
+.orden-list{display:grid;gap:.35rem}
+.o-item{display:grid;grid-template-columns:28px 54px 64px minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) 46px auto;gap:.6rem;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.5rem .6rem;font-size:.8rem}
+.o-item.dim{opacity:.25}
+.o-item.hit{border-color:var(--gold);box-shadow:0 0 0 2px rgba(212,165,55,.25)}
+.o-item.conflicto{box-shadow:inset 4px 0 0 var(--warn)}
+.o-item.sortable-ghost{opacity:.35;border-style:dashed;border-color:var(--gold)}
+.o-item.sortable-chosen{background:var(--card2)}
+.handle{cursor:grab;color:var(--muted);font-size:1.1rem;text-align:center;user-select:none;touch-action:none}
+.handle:active{cursor:grabbing}
+.o-pos{width:54px;padding:.3rem .2rem;border-radius:7px;border:1.5px solid var(--line);background:var(--bg2);color:var(--gold-l);font-family:var(--disp);font-size:1rem;text-align:center;font-weight:700}
+.o-pos:focus{outline:none;border-color:var(--gold)}
+.o-hora{font-variant-numeric:tabular-nums;color:var(--txt2);font-size:.76rem}
+.o-obra b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o-obra small{color:var(--muted);font-size:.7rem;display:block}
+.o-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt2)}
+.o-cant{text-align:center;font-weight:700;color:var(--gold-l)}
+.o-btns{display:flex;gap:.2rem}
+.o-btns button{background:var(--bg2);border:1px solid var(--line);color:var(--txt2);border-radius:6px;width:28px;height:28px;font-size:.8rem}
+.o-btns button:hover{color:var(--gold-l);border-color:var(--gold)}
+.o-head{background:transparent;border:none;font-size:.66rem;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;padding-top:0;padding-bottom:0}
+.aviso-conf{font-size:.7rem;color:var(--warn);display:block}
+@media(max-width:900px){
+  .o-item{grid-template-columns:24px 50px minmax(0,1fr) auto;row-gap:.2rem}
+  .o-hora,.o-cell,.o-cant{display:none}
+  .o-head{display:none}
+  .orden-bar{position:static}
+}
+
+/* TOAST */
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(140px);background:#000;border:1px solid var(--gold);color:var(--txt);padding:.7rem 1.1rem;border-radius:12px;font-size:.85rem;z-index:999;transition:.35s;max-width:calc(100% - 32px)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <form class="login-card" id="login-form">
+    <img src="../logo.png" alt="CUP Dance Competition"/>
+    <h1 class="gold-text">Panel administrativo</h1>
+    <p>CUP Dance Competition 2026 · Sede Gran Asunción</p>
+    <input type="password" id="clave" placeholder="Contraseña" autocomplete="current-password"/>
+    <div class="login-err" id="login-err"></div>
+    <button type="submit" class="btn btn-block" id="btn-login">Ingresar</button>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">
+        <img src="../logo.png" alt=""/>
+        <div><b class="gold-text">CUP Dance Competition</b><span id="ev-info">Panel administrativo</span></div>
+      </div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="dash">📊 Dashboard</button>
+        <button class="tab" data-tab="insc">📋 Inscripciones</button>
+        <button class="tab" data-tab="orden">🔀 Orden tentativo</button>
+      </nav>
+      <div class="top-actions">
+        <button class="btn-line" id="btn-refrescar" title="Traer datos nuevos del Sheet">🔄 Actualizar</button>
+        <a class="btn-line" id="btn-sheet" href="#" target="_blank" rel="noopener">📄 Sheet</a>
+        <button class="btn-line" id="btn-salir">Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="cargando" id="cargando"><span class="spinner"></span>Cargando inscripciones…</div>
+
+    <!-- DASHBOARD -->
+    <section id="tab-dash" class="hidden">
+      <div class="sec-title"><h2 class="gold-text">Dashboard</h2><span class="sub" id="dash-act"></span></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-dash">
+        <div class="panel"><h3>Por tipo de participación <small>obras</small></h3><div id="g-tipo"></div></div>
+        <div class="panel"><h3>Por categoría <small>obras</small></h3><div id="g-cat"></div></div>
+        <div class="panel"><h3>Estado de pago <small>obras · monto</small></h3><div id="g-pago"></div></div>
+      </div>
+      <div class="grid-dash" style="grid-template-columns:1fr 2fr">
+        <div class="panel"><h3>Por modalidad <small>obras</small></h3><div id="g-mod"></div></div>
+        <div class="panel" style="padding:0;overflow:hidden">
+          <h3 style="padding:1rem 1.1rem 0">Por academia <small>clic en el encabezado para ordenar</small></h3>
+          <div class="tbl-wrap" style="border:none;border-radius:0;max-height:520px;overflow:auto"><table id="t-acad"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSCRIPCIONES -->
+    <section id="tab-insc" class="hidden">
+      <div class="sec-title"><h2 class="gold-text">Inscripciones</h2><span class="sub">Clic en una fila para ver el detalle, los participantes y los archivos</span></div>
+      <div class="filtros">
+        <input type="search" id="f-buscar" placeholder="Buscar obra, academia, coreógrafo, ID o participante…"/>
+        <select id="f-acad"><option value="">Todas las academias</option></select>
+        <select id="f-tipo"><option value="">Todos los tipos</option></select>
+        <select id="f-cat"><option value="">Todas las categorías</option></select>
+        <select id="f-turno"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option></select>
+        <select id="f-pago"><option value="">Todos los pagos</option><option>Pendiente</option><option>Pago parcial</option><option>Pagado</option><option>Anulado</option></select>
+        <span class="contador" id="f-cont"></span>
+      </div>
+      <div class="tbl-wrap"><table id="t-insc"></table></div>
+    </section>
+
+    <!-- ORDEN -->
+    <section id="tab-orden" class="hidden">
+      <div class="sec-title"><h2 class="gold-text">Orden tentativo</h2><span class="sub">Arrastrá desde ⋮⋮, usá ↑ ↓ o escribí el número de posición. Después tocá Guardar.</span></div>
+      <div class="orden-bar">
+        <label>Inicio <input type="time" id="o-inicio" value="09:00"/></label>
+        <label>Inicio tarde <input type="time" id="o-inicio-tarde" value="14:00"/></label>
+        <label>Transición <input type="number" id="o-trans" value="20" min="0" max="300"/> seg</label>
+        <label>Separación <input type="number" id="o-sep" value="4" min="0" max="30" title="Avisa si un mismo bailarín se repite a menos de esta cantidad de obras"/> obras</label>
+        <button class="btn-line" id="o-agrupar" title="Pone todas las de la mañana primero y las de la tarde después, sin cambiar el orden dentro de cada turno">☀️/🌙 Agrupar por turno</button>
+        <input type="search" id="o-buscar" placeholder="Buscar en el orden…"/>
+        <span class="sin-guardar hidden" id="o-dirty">⚠️ Cambios sin guardar</span>
+        <button class="btn" id="o-guardar">💾 Guardar orden</button>
+      </div>
+      <div class="orden-resumen" id="o-resumen"></div>
+      <div class="o-item o-head"><span></span><span>N°</span><span>Hora</span><span>Obra · ID</span><span>Academia</span><span>Categoría · Modalidad</span><span>Tipo</span><span style="text-align:center">Cant.</span><span></span></div>
+      <div class="orden-list" id="o-lista"></div>
+    </section>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* 👉 Misma URL que en formulario.js */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyT46Od1IKUY7RYhbDPJDCghj1uiQsZnATwaJGyoGSM2C6X50pn2Y1G5pIlL5Trgih2g/exec';
+
+const TIPOS_ORDEN = ['Solista', 'Dúo', 'Trío', 'Cuarteto', 'Grupo Serie A', 'Grupo Serie B', 'Conjunto'];
+const CATS_ORDEN = ['Baby', 'Pre Infantil', 'Infantil', 'Juvenil', 'Mayores', 'Profesional', 'Aficionado'];
+
+let CLAVE = '';
+let DATA = null;          // respuesta completa
+let INSC = [];            // inscripciones
+let ORDEN = [];           // array de ids en orden actual
+let ORDEN_GUARDADO = [];  // ids tal como están en el sheet
+let dirty = false;
+let sortAcad = { k: 'obras', dir: -1 };
+let sortInsc = { k: 'fecha', dir: -1 };
+let sortable = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const gs = n => 'Gs. ' + Math.round(n || 0).toLocaleString('es-PY').replace(/,/g, '.');
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const tipoCorto = t => { t = String(t || ''); for (const x of TIPOS_ORDEN) if (t.indexOf(x) === 0) return x; return t || '—'; };
+const ss = (k, v) => { try { v === undefined ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} };
+const sg = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
+
+function toast(m, ms) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms || 3200); }
+
+async function apiGet(p) {
+  const r = await fetch(SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, p, { _ts: Date.now() })), { cache: 'no-store' });
+  return r.json();
+}
+async function apiPost(o) {
+  const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(o) });
+  return r.json();
+}
+
+/* ================= LOGIN ================= */
+$('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const c = $('clave').value.trim();
+  if (!c) return;
+  $('btn-login').disabled = true; $('btn-login').textContent = 'Verificando…'; $('login-err').textContent = '';
+  try {
+    const j = await apiGet({ accion: 'login', clave: c });
+    if (!j.ok) throw new Error(j.error || 'Contraseña incorrecta');
+    CLAVE = c; ss('cdc_admin', c);
+    entrar();
+  } catch (err) {
+    $('login-err').textContent = err.message === 'Failed to fetch' ? 'No hay conexión con el servidor' : err.message;
+  } finally { $('btn-login').disabled = false; $('btn-login').textContent = 'Ingresar'; }
+});
+
+$('btn-salir').addEventListener('click', () => {
+  if (dirty && !window.confirm('Tenés cambios sin guardar en el orden. ¿Salir igual?')) return;
+  ss('cdc_admin'); location.reload();
+});
+
+function entrar() {
+  $('login').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  cargar();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const c = sg('cdc_admin');
+  if (c) { CLAVE = c; entrar(); }
+});
+
+/* ================= TABS ================= */
+let tabActual = 'dash';
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => mostrarTab(b.dataset.tab)));
+function mostrarTab(t) {
+  tabActual = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  if (!DATA) return;
+  ['dash', 'insc', 'orden'].forEach(x => $('tab-' + x).classList.toggle('hidden', x !== t));
+}
+
+/* ================= CARGA ================= */
+$('btn-refrescar').addEventListener('click', () => {
+  if (dirty && !window.confirm('Tenés cambios sin guardar en el orden tentativo. Si actualizás se pierden. ¿Continuar?')) return;
+  cargar();
+});
+
+async function cargar() {
+  $('cargando').classList.remove('hidden');
+  ['dash', 'insc', 'orden'].forEach(x => $('tab-' + x).classList.add('hidden'));
+  try {
+    const j = await apiGet({ accion: 'admin', clave: CLAVE });
+    if (!j.ok) {
+      if (/contraseña/i.test(j.error || '')) { ss('cdc_admin'); location.reload(); return; }
+      throw new Error(j.error);
+    }
+    DATA = j;
+    INSC = j.inscripciones;
+    $('btn-sheet').href = j.sheetUrl;
+    if (j.evento) $('ev-info').textContent = 'Sede ' + (j.evento.sede || '') + ' · ' + (j.evento.fecha || '');
+    prepararOrden(j.orden);
+    pintarDash(); llenarFiltros(); pintarInsc(); pintarOrden();
+    $('cargando').classList.add('hidden');
+    mostrarTab(tabActual);
+    $('dash-act').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    $('cargando').innerHTML = '❌ No se pudieron cargar los datos: ' + esc(e.message) + '<br><br><button class="btn" onclick="cargar()">Reintentar</button>';
+  }
+}
+
+/* ================= DASHBOARD ================= */
+function contar(arr, fn) {
+  const m = {};
+  arr.forEach(x => { const k = fn(x) || '—'; m[k] = (m[k] || 0) + 1; });
+  return m;
+}
+function barras(id, mapa, orden, extra) {
+  let keys = Object.keys(mapa);
+  if (orden) keys.sort((a, b) => { const ia = orden.indexOf(a), ib = orden.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+  else keys.sort((a, b) => mapa[b] - mapa[a]);
+  const max = Math.max(1, ...keys.map(k => mapa[k]));
+  $(id).innerHTML = keys.length ? keys.map(k =>
+    '<div class="bar-row"><span class="n" title="' + esc(k) + '">' + esc(k) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (mapa[k] / max * 100) + '%"></div></div>' +
+    '<span class="c">' + mapa[k] + (extra && extra[k] != null ? ' <small>' + extra[k] + '</small>' : '') + '</span></div>').join('')
+    : '<div class="vacio">Sin datos todavía</div>';
+}
+
+function pintarDash() {
+  const act = INSC.filter(i => i.estadoPago !== 'Anulado');
+  const participantes = act.reduce((s, i) => s + (i.cantidad || 0), 0);
+  const unicos = new Set();
+  act.forEach(i => i.participantes.forEach(p => unicos.add(norm(p.documento) || norm(p.nombre))));
+  const academias = new Set(act.map(i => norm(i.academia))).size;
+  const monto = act.reduce((s, i) => s + i.monto, 0);
+  const pagado = act.filter(i => i.estadoPago === 'Pagado').reduce((s, i) => s + i.monto, 0);
+  const coreo = act.filter(i => String(i.compiteCoreo).toUpperCase() === 'SI').length;
+  const anuladas = INSC.length - act.length;
+  const kpi = (l, v, s) => '<div class="kpi"><div class="l">' + l + '</div><div class="v gold-text">' + v + '</div><div class="s">' + (s || '&nbsp;') + '</div></div>';
+  $('kpis').innerHTML =
+    kpi('Inscripciones', act.length, anuladas ? anuladas + ' anulada(s) no se cuentan' : 'obras inscriptas') +
+    kpi('Academias', academias, 'instituciones distintas') +
+    kpi('Participaciones', participantes, unicos.size + ' bailarines distintos') +
+    kpiTurno('Mañana', act) + kpiTurno('Tarde', act) +
+    kpi('Compiten coreografía', coreo, 'premio Mejor Coreógrafo') +
+    kpi('Monto total', gs(monto), 'Pagado: ' + gs(pagado)) +
+    kpi('Por cobrar', gs(monto - pagado), act.filter(i => i.estadoPago !== 'Pagado').length + ' obras sin pago completo');
+
+  barras('g-tipo', contar(act, i => tipoCorto(i.tipo)), TIPOS_ORDEN);
+  barras('g-cat', contar(act, i => i.categoria), CATS_ORDEN);
+  barras('g-mod', contar(act, i => i.modalidad));
+  const pagos = contar(INSC, i => i.estadoPago);
+  const montos = {};
+  INSC.forEach(i => montos[i.estadoPago] = (montos[i.estadoPago] || 0) + i.monto);
+  const ex = {}; Object.keys(montos).forEach(k => ex[k] = gs(montos[k]));
+  barras('g-pago', pagos, ['Pagado', 'Pago parcial', 'Pendiente', 'Anulado'], ex);
+  pintarTablaAcad();
+}
+
+function kpiTurno(t, act) {
+  const n = act.filter(i => i.turno === t).length;
+  const cupo = DATA.turnos && DATA.turnos[t] ? DATA.turnos[t].cupo : 0;
+  const sub = cupo > 0 ? (n >= cupo ? '🔴 Cupo completo' : 'quedan ' + (cupo - n) + ' de ' + cupo) : 'sin límite de cupo';
+  return '<div class="kpi"><div class="l">' + (t === 'Mañana' ? '☀️' : '🌙') + ' Turno ' + t.toLowerCase() + '</div><div class="v gold-text">' + n + (cupo > 0 ? '<small style="font-size:1rem;opacity:.7"> / ' + cupo + '</small>' : '') + '</div><div class="s">' + sub + '</div>' +
+    (cupo > 0 ? '<div class="bar-track" style="margin-top:.4rem;position:relative"><div class="bar-fill" style="width:' + Math.min(100, n / cupo * 100) + '%"></div></div>' : '') + '</div>';
+}
+
+function pintarTablaAcad() {
+  const act = INSC.filter(i => i.estadoPago !== 'Anulado');
+  const m = {};
+  act.forEach(i => {
+    const k = i.academia.trim();
+    const a = m[k] = m[k] || { academia: k, obras: 0, part: 0, monto: 0, pagado: 0, Solista: 0, 'Dúo': 0, 'Trío': 0, Cuarteto: 0, 'Grupo Serie A': 0, 'Grupo Serie B': 0, Conjunto: 0 };
+    a.obras++; a.part += i.cantidad; a.monto += i.monto; if (i.estadoPago === 'Pagado') a.pagado += i.monto;
+    const t = tipoCorto(i.tipo); if (a[t] != null) a[t]++;
+  });
+  let rows = Object.values(m);
+  const k = sortAcad.k;
+  rows.sort((a, b) => (typeof a[k] === 'string' ? a[k].localeCompare(b[k], 'es') : a[k] - b[k]) * sortAcad.dir);
+  const cols = [['academia', 'Academia'], ['obras', 'Obras'], ['part', 'Partic.'], ['Solista', 'Sol.'], ['Dúo', 'Dúo'], ['Trío', 'Trío'], ['Cuarteto', 'Cuart.'], ['Grupo Serie A', 'G. A'], ['Grupo Serie B', 'G. B'], ['Conjunto', 'Conj.'], ['monto', 'Monto'], ['pagado', 'Pagado']];
+  const tot = {}; cols.forEach(c => { if (c[0] !== 'academia') tot[c[0]] = rows.reduce((s, r) => s + r[c[0]], 0); });
+  const cel = (c, v) => c === 'academia' ? '<td>' + esc(v) + '</td>' : '<td class="num">' + (c === 'monto' || c === 'pagado' ? gs(v) : (v || '<span class="muted">·</span>')) + '</td>';
+  $('t-acad').innerHTML = '<thead><tr>' + cols.map(c => '<th class="' + (c[0] === 'academia' ? '' : 'num') + '" data-k="' + c[0] + '">' + c[1] + (sortAcad.k === c[0] ? (sortAcad.dir > 0 ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr></thead>' +
+    '<tbody>' + (rows.length ? rows.map(r => '<tr>' + cols.map(c => cel(c[0], r[c[0]])).join('') + '</tr>').join('') : '<tr><td colspan="12" class="vacio">Sin inscripciones todavía</td></tr>') + '</tbody>' +
+    (rows.length ? '<tfoot><tr><td>TOTAL · ' + rows.length + ' academias</td>' + cols.slice(1).map(c => '<td class="num">' + (c[0] === 'monto' || c[0] === 'pagado' ? gs(tot[c[0]]) : tot[c[0]]) + '</td>').join('') + '</tr></tfoot>' : '');
+  $('t-acad').querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+    const k2 = th.dataset.k; sortAcad = { k: k2, dir: sortAcad.k === k2 ? -sortAcad.dir : (k2 === 'academia' ? 1 : -1) }; pintarTablaAcad();
+  }));
+}
+
+/* ================= INSCRIPCIONES ================= */
+function llenarFiltros() {
+  const opts = (id, vals, ph) => { const cur = $(id).value; $(id).innerHTML = '<option value="">' + ph + '</option>' + vals.map(v => '<option>' + esc(v) + '</option>').join(''); $(id).value = cur; };
+  opts('f-acad', [...new Set(INSC.map(i => i.academia.trim()))].sort((a, b) => a.localeCompare(b, 'es')), 'Todas las academias');
+  opts('f-tipo', TIPOS_ORDEN, 'Todos los tipos');
+  opts('f-cat', CATS_ORDEN, 'Todas las categorías');
+}
+['f-buscar', 'f-acad', 'f-tipo', 'f-cat', 'f-pago', 'f-turno'].forEach(id => $(id).addEventListener('input', pintarInsc));
+
+function chipTurno(t) {
+  if (!t) return '<span class="muted">—</span>';
+  return '<span class="chip ' + (t === 'Mañana' ? 'chip-man' : 'chip-tar') + '">' + (t === 'Mañana' ? '☀️ ' : '🌙 ') + esc(t) + '</span>';
+}
+function chipPago(e) {
+  const c = { 'Pagado': 'chip-pag', 'Pago parcial': 'chip-par', 'Anulado': 'chip-anu' }[e] || 'chip-pend';
+  return '<span class="chip ' + c + '">' + esc(e || 'Pendiente') + '</span>';
+}
+
+function pintarInsc() {
+  const fturno = $('f-turno').value;
+  const q = norm($('f-buscar').value), fa = $('f-acad').value, ft = $('f-tipo').value, fc = $('f-cat').value, fp = $('f-pago').value;
+  let rows = INSC.filter(i =>
+    (!fturno || i.turno === fturno) && (!fa || i.academia.trim() === fa) && (!ft || tipoCorto(i.tipo) === ft) && (!fc || i.categoria === fc) && (!fp || i.estadoPago === fp) &&
+    (!q || norm([i.id, i.obra, i.academia, i.coreografo, i.modalidad, i.director, i.participantes.map(p => p.nombre + ' ' + p.documento).join(' ')].join(' ')).indexOf(q) > -1));
+  const k = sortInsc.k;
+  rows.sort((a, b) => {
+    let va = a[k], vb = b[k];
+    if (k === 'fecha') { va = fechaNum(va); vb = fechaNum(vb); }
+    return (typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es')) * sortInsc.dir;
+  });
+  const cols = [['id', 'ID'], ['fecha', 'Fecha'], ['academia', 'Academia'], ['obra', 'Obra'], ['modalidad', 'Modalidad'], ['categoria', 'Categoría'], ['turno', 'Turno'], ['tipo', 'Tipo'], ['cantidad', 'Cant.'], ['coreografo', 'Coreógrafo/a'], ['duracion', 'Dur.'], ['tipoMusica', 'Música'], ['monto', 'Monto'], ['estadoPago', 'Pago']];
+  $('t-insc').innerHTML = '<thead><tr>' + cols.map(c => '<th class="' + (c[0] === 'cantidad' || c[0] === 'monto' ? 'num' : '') + '" data-k="' + c[0] + '">' + c[1] + (sortInsc.k === c[0] ? (sortInsc.dir > 0 ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr></thead><tbody>' +
+    (rows.length ? rows.map(i => '<tr class="click" data-id="' + esc(i.id) + '">' +
+      '<td class="id">' + esc(i.id) + '</td><td class="muted" style="white-space:nowrap">' + esc(i.fecha) + '</td><td>' + esc(i.academia) + '</td>' +
+      '<td><b>' + esc(i.obra) + '</b>' + (String(i.compiteCoreo).toUpperCase() === 'SI' ? ' <span class="chip chip-gold" title="Compite por coreografía">★ Coreo</span>' : '') + '</td>' +
+      '<td>' + esc(i.modalidad) + (i.estilo ? '<br><span class="muted">' + esc(i.estilo) + '</span>' : '') + '</td><td>' + esc(i.categoria) + '</td><td>' + chipTurno(i.turno) + '</td><td>' + esc(tipoCorto(i.tipo)) + '</td>' +
+      '<td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + esc(i.duracion) + '</td>' +
+      '<td>' + (i.linkMusica ? '<a class="chip chip-gold" href="' + esc(i.linkMusica) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">🎵 MP3</a>' : '<span class="muted">' + esc(i.tipoMusica) + '</span>') + '</td>' +
+      '<td class="num" style="white-space:nowrap">' + gs(i.monto) + (i.comprobante ? '<br><a class="chip chip-gold" href="' + esc(i.comprobante) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">🧾 Comprobante</a>' : '') + '</td>' +
+      '<td>' + chipPago(i.estadoPago) + '</td></tr>').join('')
+      : '<tr><td colspan="14" class="vacio">' + (INSC.length ? 'Ninguna inscripción coincide con el filtro' : 'Todavía no hay inscripciones') + '</td></tr>') + '</tbody>';
+  $('f-cont').textContent = rows.length + ' de ' + INSC.length + ' · ' + rows.reduce((s, i) => s + i.cantidad, 0) + ' participaciones · ' + gs(rows.reduce((s, i) => s + i.monto, 0));
+  $('t-insc').querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+    const k2 = th.dataset.k; sortInsc = { k: k2, dir: sortInsc.k === k2 ? -sortInsc.dir : 1 }; pintarInsc();
+  }));
+  $('t-insc').querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', () => abrirDetalle(tr.dataset.id)));
+}
+
+function fechaNum(f) {
+  const m = String(f || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{1,2})?:?(\d{2})?/);
+  return m ? Number(m[3] + m[2].padStart(2, '0') + m[1].padStart(2, '0') + (m[4] || '0').padStart(2, '0') + (m[5] || '00')) : 0;
+}
+
+function abrirDetalle(id) {
+  const i = INSC.find(x => x.id === id);
+  if (!i) return;
+  const kv = (a, b) => '<div><span>' + a + '</span><span>' + (b ? esc(b) : '<span class="muted">—</span>') + '</span></div>';
+  const posOrden = ORDEN.indexOf(id);
+  $('modal-root').innerHTML =
+    '<div class="modal-bg" id="mbg"><div class="modal">' +
+    '<div class="modal-head"><div><span class="id">' + esc(i.id) + (posOrden > -1 ? ' · Orden N° ' + (posOrden + 1) : '') + '</span><h3 class="gold-text">' + esc(i.obra) + '</h3><span class="muted">' + esc(i.academia) + '</span></div><button class="x" id="mx" aria-label="Cerrar">✕</button></div>' +
+    '<div class="modal-body">' +
+    '<div class="kv">' +
+      kv('Modalidad', i.modalidad + (i.estilo ? ' — ' + i.estilo : '')) + kv('Categoría', i.categoria) +
+      kv('Turno', i.turno) + kv('Tipo', i.tipo) + kv('Participantes', String(i.cantidad)) +
+      kv('Coreógrafo/a', i.coreografo) + kv('Maestro/a preparador/a', i.preparador) +
+      kv('Compite coreografía', i.compiteCoreo) + kv('Duración', i.duracion) +
+      kv('Música', i.tipoMusica) + kv('Escenografía', i.escenografia + (i.escenoDesc ? ' — ' + i.escenoDesc : '')) +
+      kv('Director/a', i.director) + kv('Teléfono', i.telefono) +
+      kv('Email', i.email) + kv('Ciudad / País', i.ciudad) +
+      kv('Contacto responsable', i.contactoResp) + kv('Fecha inscripción', i.fecha) +
+      kv('Monto', gs(i.monto) + (i.detalleMonto ? ' (' + i.detalleMonto + ')' : '')) + kv('Forma de pago', i.formaPago) +
+    '</div>' +
+    (i.observaciones ? '<div class="panel"><h3>Observaciones</h3>' + esc(i.observaciones) + '</div>' : '') +
+    '<div class="links">' +
+      (i.linkMusica ? '<a class="btn-line" href="' + esc(i.linkMusica) + '" target="_blank" rel="noopener">🎵 Escuchar música</a>' : '') +
+      (i.comprobante ? '<a class="btn-line" href="' + esc(i.comprobante) + '" target="_blank" rel="noopener">🧾 Ver comprobante</a>' : '') +
+      (i.fotoEsceno ? '<a class="btn-line" href="' + esc(i.fotoEsceno) + '" target="_blank" rel="noopener">📷 Foto escenografía</a>' : '') +
+      (i.telefono ? '<a class="btn-line" href="https://wa.me/' + waNum(i.telefono) + '" target="_blank" rel="noopener">💬 WhatsApp director/a</a>' : '') +
+    '</div>' +
+    '<div class="estado-row"><b>Estado de pago:</b><select id="m-estado">' + ['Pendiente', 'Pago parcial', 'Pagado', 'Anulado'].map(e => '<option' + (e === i.estadoPago ? ' selected' : '') + '>' + e + '</option>').join('') + '</select><button class="btn" id="m-guardar-estado">Guardar estado</button></div>' +
+    '<div><h3 style="font-size:.95rem;text-transform:uppercase;color:var(--gold-l);margin-bottom:.5rem">Participantes (' + i.participantes.length + ')</h3>' +
+    (i.participantes.length ? '<ul class="part-list">' + i.participantes.map((p, n) => '<li><span class="nn">' + (n + 1) + '</span><span class="nm">' + esc(p.nombre) + '</span><span class="muted">' + esc(p.documento) + '</span>' + (p.edad !== '' && p.edad != null ? '<span class="chip chip-gold">' + esc(p.edad) + ' años</span>' : '') + '</li>').join('') + '</ul>' : '<div class="vacio">Sin participantes cargados</div>') +
+    '</div></div></div></div>';
+  const cerrar = () => $('modal-root').innerHTML = '';
+  $('mx').onclick = cerrar;
+  $('mbg').addEventListener('click', e => { if (e.target.id === 'mbg') cerrar(); });
+  document.addEventListener('keydown', function k(e) { if (e.key === 'Escape') { cerrar(); document.removeEventListener('keydown', k); } });
+  $('m-guardar-estado').onclick = async () => {
+    const est = $('m-estado').value, b = $('m-guardar-estado');
+    b.disabled = true; b.textContent = 'Guardando…';
+    try {
+      const j = await apiPost({ accion: 'estadoPago', clave: CLAVE, id: i.id, estado: est });
+      if (!j.ok) throw new Error(j.error);
+      i.estadoPago = est; toast('✓ Estado actualizado: ' + est);
+      pintarDash(); pintarInsc(); pintarOrden(); cerrar();
+    } catch (e) { toast('❌ ' + e.message); b.disabled = false; b.textContent = 'Guardar estado'; }
+  };
+}
+function waNum(t) { let d = String(t).replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '595' + d.slice(1); return d; }
+
+/* ================= ORDEN TENTATIVO ================= */
+function prepararOrden(guardado) {
+  const vigentes = INSC.filter(i => i.estadoPago !== 'Anulado').map(i => i.id);
+  const set = new Set(vigentes);
+  ORDEN_GUARDADO = (guardado || []).filter(id => set.has(id));
+  const enOrden = new Set(ORDEN_GUARDADO);
+  // Nuevas inscripciones (todavía no ubicadas) van al final, en orden de llegada
+  const nuevas = INSC.filter(i => set.has(i.id) && !enOrden.has(i.id)).sort((a, b) => fechaNum(a.fecha) - fechaNum(b.fecha)).map(i => i.id);
+  ORDEN = ORDEN_GUARDADO.concat(nuevas);
+  setDirty(false);
+}
+
+function setDirty(v) { dirty = v; $('o-dirty').classList.toggle('hidden', !v); }
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+function durSeg(d) {
+  const m = String(d || '').match(/(\d+):(\d{1,2})/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 180;
+}
+function horaTxt(seg) {
+  seg = Math.round(seg);
+  const h = Math.floor(seg / 3600) % 24, m = Math.floor(seg / 60) % 60, s = seg % 60;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+function calcularHoras() {
+  const [hh, mm] = ($('o-inicio').value || '09:00').split(':').map(Number);
+  const trans = Number($('o-trans').value || 0);
+  let t = hh * 3600 + mm * 60;
+  const [th, tm] = ($('o-inicio-tarde').value || '14:00').split(':').map(Number);
+  const inicioTarde = th * 3600 + tm * 60;
+  let enTarde = false;
+  const horas = {};
+  ORDEN.forEach(id => {
+    const i = INSC.find(x => x.id === id);
+    if (!enTarde && i && i.turno === 'Tarde') { enTarde = true; t = Math.max(t, inicioTarde); }
+    horas[id] = horaTxt(t);
+    t += durSeg(i && i.duracion) + trans;
+  });
+  return { horas: horas, fin: horaTxt(t) };
+}
+
+function conflictos() {
+  const sep = Number($('o-sep').value || 0);
+  const res = {};
+  if (!sep) return res;
+  const docs = ORDEN.map(id => { const i = INSC.find(x => x.id === id); return new Set((i ? i.participantes : []).map(p => norm(p.documento) || norm(p.nombre)).filter(Boolean)); });
+  for (let a = 0; a < docs.length; a++) {
+    for (let b = a + 1; b <= Math.min(a + sep, docs.length - 1); b++) {
+      let n = 0; docs[a].forEach(d => { if (docs[b].has(d)) n++; });
+      if (n) {
+        res[ORDEN[b]] = res[ORDEN[b]] || [];
+        res[ORDEN[b]].push({ con: a + 1, n: n, dist: b - a });
+      }
+    }
+  }
+  return res;
+}
+
+function pintarOrden() {
+  const enGuardado = new Set(ORDEN_GUARDADO);
+  const { horas, fin } = calcularHoras();
+  const conf = conflictos();
+  const q = norm($('o-buscar').value);
+  const lista = $('o-lista');
+  if (!ORDEN.length) { lista.innerHTML = '<div class="vacio">Todavía no hay inscripciones para ordenar</div>'; $('o-resumen').innerHTML = ''; return; }
+  lista.innerHTML = ORDEN.map((id, n) => {
+    const i = INSC.find(x => x.id === id) || { obra: id, academia: '', participantes: [] };
+    const c = conf[id];
+    const hit = q && norm([i.obra, i.academia, i.coreografo, i.id, i.modalidad, i.categoria].join(' ')).indexOf(q) > -1;
+    return '<div class="o-item' + (c ? ' conflicto' : '') + (q ? (hit ? ' hit' : ' dim') : '') + '" data-id="' + esc(id) + '">' +
+      '<span class="handle" title="Arrastrar">⋮⋮</span>' +
+      '<input class="o-pos" type="number" min="1" max="' + ORDEN.length + '" value="' + (n + 1) + '" data-id="' + esc(id) + '" title="Escribí el número y Enter para mover"/>' +
+      '<span class="o-hora">' + horas[id] + '</span>' +
+      '<span class="o-obra"><b>' + chipTurno(i.turno) + ' ' + esc(i.obra) + (enGuardado.has(id) ? '' : ' <span class="chip chip-new">nueva</span>') + (i.estadoPago === 'Pagado' ? '' : ' <span class="chip chip-pend" title="Pago: ' + esc(i.estadoPago) + '">$</span>') + '</b>' +
+        '<small>' + esc(i.id) + ' · ' + esc(i.duracion || '—') + ' · ' + esc(i.coreografo || '') + '</small>' +
+        (c ? '<span class="aviso-conf">⚠️ ' + c.map(x => x.n + ' bailarín(es) también en N° ' + x.con).join(' · ') + '</span>' : '') + '</span>' +
+      '<span class="o-cell" title="' + esc(i.academia) + '">' + esc(i.academia) + '</span>' +
+      '<span class="o-cell">' + esc(i.categoria || '') + ' · ' + esc(i.modalidad || '') + '</span>' +
+      '<span class="o-cell">' + esc(tipoCorto(i.tipo)) + '</span>' +
+      '<span class="o-cant">' + (i.cantidad || '') + '</span>' +
+      '<span class="o-btns"><button data-mv="-1" data-id="' + esc(id) + '" title="Subir">↑</button><button data-mv="1" data-id="' + esc(id) + '" title="Bajar">↓</button></span>' +
+      '</div>';
+  }).join('');
+  const nNuevas = ORDEN.filter(id => !enGuardado.has(id)).length;
+  $('o-resumen').innerHTML = '<span><b>' + ORDEN.length + '</b> obras en el orden</span><span>Fin estimado: <b>' + fin.slice(0, 5) + '</b></span>' +
+    '<span>☀️ Mañana: <b>' + ORDEN.filter(id => (INSC.find(x => x.id === id) || {}).turno === 'Mañana').length + '</b> · 🌙 Tarde: <b>' + ORDEN.filter(id => (INSC.find(x => x.id === id) || {}).turno === 'Tarde').length + '</b></span>' +
+    (mezcla() ? '<span style="color:var(--warn)">⚠️ Hay obras de la tarde intercaladas antes de obras de la mañana</span>' : '') +
+    (nNuevas ? '<span><b>' + nNuevas + '</b> nueva(s) sin ubicar (al final)</span>' : '') +
+    (Object.keys(conf).length ? '<span style="color:var(--warn)"><b style="color:var(--warn)">' + Object.keys(conf).length + '</b> obra(s) con bailarines repetidos muy cerca</span>' : '');
+
+  lista.querySelectorAll('.o-pos').forEach(inp => {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); moverA(inp.dataset.id, Number(inp.value)); } });
+    inp.addEventListener('change', () => moverA(inp.dataset.id, Number(inp.value)));
+  });
+  lista.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => {
+    const i = ORDEN.indexOf(b.dataset.id); moverA(b.dataset.id, i + 1 + Number(b.dataset.mv));
+  }));
+  activarArrastre();
+}
+
+function mezcla() {
+  let vioTarde = false;
+  for (const id of ORDEN) {
+    const t = (INSC.find(x => x.id === id) || {}).turno;
+    if (t === 'Tarde') vioTarde = true;
+    else if (t === 'Mañana' && vioTarde) return true;
+  }
+  return false;
+}
+$('o-agrupar').addEventListener('click', () => {
+  const rango = id => { const t = (INSC.find(x => x.id === id) || {}).turno; return t === 'Mañana' ? 0 : t === 'Tarde' ? 1 : 2; };
+  const antes = ORDEN.join('|');
+  ORDEN = ORDEN.map((id, n) => ({ id, n })).sort((a, b) => rango(a.id) - rango(b.id) || a.n - b.n).map(x => x.id);
+  if (ORDEN.join('|') !== antes) { setDirty(true); toast('Agrupado: mañana primero, tarde después'); }
+  pintarOrden();
+});
+
+function moverA(id, pos) {
+  const from = ORDEN.indexOf(id);
+  if (from < 0 || !pos) return;
+  pos = Math.max(1, Math.min(ORDEN.length, Math.round(pos)));
+  if (pos - 1 === from) { pintarOrden(); return; }
+  ORDEN.splice(from, 1);
+  ORDEN.splice(pos - 1, 0, id);
+  setDirty(true);
+  pintarOrden();
+  const el = $('o-lista').querySelector('[data-id="' + CSS.escape(id) + '"]');
+  if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('hit'); setTimeout(() => el.classList.remove('hit'), 1200); }
+}
+
+function activarArrastre() {
+  if (typeof Sortable === 'undefined') return;
+  if (sortable) sortable.destroy();
+  sortable = Sortable.create($('o-lista'), {
+    handle: '.handle', animation: 150, scroll: true, scrollSensitivity: 120, bubbleScroll: true,
+    onEnd: ev => {
+      if (ev.oldIndex === ev.newIndex) return;
+      const [id] = ORDEN.splice(ev.oldIndex, 1);
+      ORDEN.splice(ev.newIndex, 0, id);
+      setDirty(true);
+      pintarOrden();
+    }
+  });
+}
+
+['o-inicio', 'o-inicio-tarde', 'o-trans', 'o-sep'].forEach(id => $(id).addEventListener('input', () => { pintarOrden(); try { localStorage.setItem('cdc_' + id, $(id).value); } catch (e) {} }));
+['o-inicio', 'o-inicio-tarde', 'o-trans', 'o-sep'].forEach(id => { try { const v = localStorage.getItem('cdc_' + id); if (v) $(id).value = v; } catch (e) {} });
+$('o-buscar').addEventListener('input', () => {
+  pintarOrden();
+  const first = $('o-lista').querySelector('.o-item.hit');
+  if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+});
+
+$('o-guardar').addEventListener('click', async () => {
+  const b = $('o-guardar');
+  b.disabled = true; b.textContent = 'Guardando…';
+  const { horas } = calcularHoras();
+  const filas = ORDEN.map(id => {
+    const i = INSC.find(x => x.id === id) || {};
+    return { id: id, turno: i.turno || '', academia: i.academia, obra: i.obra, categoria: i.categoria, modalidad: i.modalidad + (i.estilo ? ' — ' + i.estilo : ''), tipo: tipoCorto(i.tipo), cantidad: i.cantidad, coreografo: i.coreografo, duracion: i.duracion, hora: horas[id].slice(0, 5) };
+  });
+  try {
+    const j = await apiPost({ accion: 'guardarOrden', clave: CLAVE, filas: filas });
+    if (!j.ok) throw new Error(j.error);
+    ORDEN_GUARDADO = ORDEN.slice();
+    setDirty(false);
+    pintarOrden();
+    toast('✅ Orden guardado (' + j.total + ' obras) en la hoja "Orden Tentativo"');
+  } catch (e) {
+    toast('❌ No se pudo guardar: ' + e.message, 6000);
+  } finally { b.disabled = false; b.textContent = '💾 Guardar orden'; }
+});
+</script>
+</body>
+</html>
