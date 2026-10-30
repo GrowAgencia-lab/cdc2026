@@ -553,22 +553,34 @@ function pintarCostos() {
   $('monto-detalle').textContent = m.detalle;
 }
 
+/* 👉 Turnos cerrados a mano (cupo completo). Para reabrir, sacalo de la lista: [] */
+const TURNOS_CERRADOS = ['Mañana'];
+
 function pintarTurnos() {
   const tu = CONFIG.turnos || {};
-  const actual = radio('turno');
+  const cerrado = t => TURNOS_CERRADOS.indexOf(t) > -1 || (tu[t] && tu[t].lleno);
+  const abiertos = ['Mañana', 'Tarde'].filter(t => !cerrado(t));
+  let actual = radio('turno');
+  if (actual && cerrado(actual)) actual = '';
+  if (!actual && abiertos.length === 1) actual = abiertos[0];
   $('pills-turno').innerHTML = ['Mañana', 'Tarde'].map(t => {
     const x = tu[t] || {};
     const icono = t === 'Mañana' ? '☀️' : '🌙';
     let info = '';
-    if (x.lleno) info = 'Completo';
+    if (cerrado(t)) info = 'Cupo completo';
     else if (x.cupo > 0) info = 'quedan ' + Math.max(0, x.cupo - x.usados);
-    return '<label class="pill"><input type="radio" name="turno" value="' + t + '"' + (x.lleno ? ' disabled' : '') + (actual === t && !x.lleno ? ' checked' : '') + '/>' +
+    return '<label class="pill"><input type="radio" name="turno" value="' + t + '"' + (cerrado(t) ? ' disabled' : '') + (actual === t ? ' checked' : '') + '/>' +
       '<span>' + icono + ' Turno ' + t.toLowerCase() + (info ? ' <small>' + info + '</small>' : '') + '</span></label>';
   }).join('');
-  const lleno = ['Mañana', 'Tarde'].filter(t => tu[t] && tu[t].lleno);
-  $('hint-turno').textContent = lleno.length
-    ? 'El turno ' + lleno.join(' y ').toLowerCase() + ' ya completó su cupo.'
-    : 'Elegí en qué turno querés presentar la obra. Los cupos son limitados.';
+  const llenos = ['Mañana', 'Tarde'].filter(cerrado);
+  const hint = $('hint-turno');
+  if (llenos.length && abiertos.length) {
+    hint.innerHTML = '<span style="color:var(--warn);font-weight:700">⚠️ El turno ' + llenos.join(' y ').toLowerCase() + ' ya completó su cupo.</span> Las inscripciones siguen abiertas solo para el <b>turno ' + abiertos.join(' y ').toLowerCase() + '</b>.';
+  } else if (!abiertos.length) {
+    hint.innerHTML = '<span style="color:var(--err);font-weight:700">Todos los turnos completaron su cupo.</span>';
+  } else {
+    hint.textContent = 'Elegí en qué turno querés presentar la obra. Los cupos son limitados.';
+  }
 }
 
 function pintarBanco() {
