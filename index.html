@@ -37,6 +37,9 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 
 /* CERRADO */
 .cerrado-banner{display:none;max-width:720px;margin:1.2rem auto 0;background:#2A0F0F;border:1px solid #7F1D1D;color:#FECACA;text-align:center;padding:1.1rem;border-radius:var(--rad);font-weight:600}
+.espera-banner{display:none;max-width:720px;margin:1.2rem auto 0;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.45);color:#FDE68A;text-align:center;padding:1rem 1.1rem;border-radius:var(--rad);font-size:.88rem;line-height:1.55}
+.espera-banner b{color:var(--warn)}
+@media(max-width:760px){.espera-banner,.cerrado-banner{margin-left:16px;margin-right:16px}}
 .preview-banner{display:none;max-width:720px;margin:1rem auto 0;background:#2A2208;border:1px dashed var(--gold);color:var(--gold-l);text-align:center;padding:.7rem 1rem;border-radius:10px;font-size:.8rem}
 
 /* PROGRESS */
@@ -240,6 +243,7 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 </header>
 
 <div class="cerrado-banner" id="cerrado-banner"></div>
+<div class="espera-banner" id="espera-banner"><b>🔒 Inscripciones cerradas · ⏳ Lista de espera abierta</b><br>Se completaron los cupos. Completá el formulario para anotarte en la lista de espera: si se libera un lugar te vamos a contactar. <b>No realices ningún pago todavía.</b></div>
 <div class="preview-banner" id="preview-banner">⚙️ Modo vista previa: falta conectar la URL del Apps Script en <b>formulario.js</b>. Se puede navegar pero no enviar.</div>
 
 <div class="progress-wrap" id="progress-wrap">
@@ -478,7 +482,7 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 
 <!-- ========== SEC 5: COSTOS ========== -->
 <section class="seccion" id="sec-5">
-  <div class="sec-header"><div class="num">5</div><h2>Costos y forma de pago</h2></div>
+  <div class="sec-header"><div class="num">5</div><h2 id="titulo-sec5">Costos y forma de pago</h2></div>
   <div class="sec-body">
     <div class="info-box">
       <span class="tit">💰 Inversión por participante</span>
@@ -490,7 +494,11 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
       <div class="monto gold-text" id="monto-total">Gs. 0</div>
       <div class="detalle" id="monto-detalle"></div>
     </div>
-    <div class="campo" style="margin-top:1.2rem">
+    <div class="info-box" id="espera-pago" style="display:none;margin-top:1rem;border-left-color:var(--warn)">
+      <span class="tit">⏳ Lista de espera — no abones todavía</span>
+      El monto de arriba es solo de referencia. Si se libera un lugar, la organización te va a contactar para confirmar la inscripción y recién ahí se realiza el pago.
+    </div>
+    <div class="campo" id="campo-pago" style="margin-top:1.2rem">
       <label>Forma de pago <span class="req">*</span></label>
       <div class="pills" id="pills-pago">
         <label class="pill"><input type="radio" name="forma-pago" value="Transferencia bancaria"/><span>🏦 Transferencia</span></label>
@@ -564,8 +572,8 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 <!-- ========== ÉXITO ========== -->
 <div class="exito" id="exito">
   <img src="logo.png" alt=""/>
-  <h2 class="gold-text">¡Inscripción enviada!</h2>
-  <p>Recibimos la inscripción de <b id="ok-obra"></b>. Te enviamos un email con el resumen completo.</p>
+  <h2 class="gold-text" id="ok-titulo">¡Inscripción enviada!</h2>
+  <p id="ok-texto">Recibimos la inscripción de <b id="ok-obra"></b>. Te enviamos un email con el resumen completo.</p>
   <div class="id-insc" id="ok-id"></div>
   <div class="monto-final" id="ok-monto"></div>
   <p style="font-size:.8rem" id="ok-wa-txt">Si todavía no enviaste el comprobante, mandalo por WhatsApp indicando el ID de inscripción.</p>
@@ -585,6 +593,6 @@ h1,h2,h3,.oswald{font-family:'Oswald','Arial Narrow',Arial,sans-serif;letter-spa
 
 <div class="toast" id="toast"></div>
 
-<script src="formulario.js?v=6"></script>
+<script src="formulario.js?v=7"></script>
 </body>
 </html>
