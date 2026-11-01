@@ -213,6 +213,7 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <button class="tab active" data-tab="dash">📊 Dashboard</button>
         <button class="tab" data-tab="insc">📋 Inscripciones</button>
         <button class="tab" data-tab="orden">🔀 Orden tentativo</button>
+        <button class="tab" data-tab="espera">⏳ Lista de espera <span id="cnt-espera"></span></button>
       </nav>
       <div class="top-actions">
         <button class="btn-line" id="btn-refrescar" title="Traer datos nuevos del Sheet">🔄 Actualizar</button>
@@ -256,6 +257,16 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <span class="contador" id="f-cont"></span>
       </div>
       <div class="tbl-wrap"><table id="t-insc"></table></div>
+    </section>
+
+    <!-- LISTA DE ESPERA -->
+    <section id="tab-espera" class="hidden">
+      <div class="sec-title"><h2 class="gold-text">Lista de espera</h2><span class="sub" id="espera-sub">Obras anotadas después del cierre, en orden de llegada. Tocá una fila para ver el detalle.</span></div>
+      <div class="filtros">
+        <input type="search" id="e-buscar" placeholder="Buscar obra, academia, coreógrafo o ID…"/>
+        <span class="contador" id="e-cont"></span>
+      </div>
+      <div class="tbl-wrap"><table id="t-espera"></table></div>
     </section>
 
     <!-- ORDEN -->
@@ -304,7 +315,8 @@ const CRITERIOS = {
 
 let CLAVE = '';
 let DATA = null;          // respuesta completa
-let INSC = [];            // inscripciones
+let INSC = [];
+let ESPERA = [];            // inscripciones
 let ORDEN = [];           // array de ids en orden actual
 let ORDEN_GUARDADO = [];  // ids tal como están en el sheet
 let dirty = false;
@@ -370,7 +382,7 @@ function mostrarTab(t) {
   tabActual = t;
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
   if (!DATA) return;
-  ['dash', 'insc', 'orden'].forEach(x => $('tab-' + x).classList.toggle('hidden', x !== t));
+  ['dash', 'insc', 'orden', 'espera'].forEach(x => $('tab-' + x).classList.toggle('hidden', x !== t));
 }
 
 /* ================= CARGA ================= */
@@ -381,7 +393,7 @@ $('btn-refrescar').addEventListener('click', () => {
 
 async function cargar() {
   $('cargando').classList.remove('hidden');
-  ['dash', 'insc', 'orden'].forEach(x => $('tab-' + x).classList.add('hidden'));
+  ['dash', 'insc', 'orden', 'espera'].forEach(x => $('tab-' + x).classList.add('hidden'));
   try {
     const j = await apiGet({ accion: 'admin', clave: CLAVE });
     if (!j.ok) {
@@ -390,10 +402,11 @@ async function cargar() {
     }
     DATA = j;
     INSC = j.inscripciones;
+    ESPERA = j.listaEspera || [];
     $('btn-sheet').href = j.sheetUrl;
     if (j.evento) $('ev-info').textContent = 'Sede ' + (j.evento.sede || '') + ' · ' + (j.evento.fecha || '');
     prepararOrden(j.orden);
-    pintarDash(); llenarFiltros(); pintarInsc(); pintarOrden();
+    pintarDash(); llenarFiltros(); pintarInsc(); pintarOrden(); pintarEspera();
     $('cargando').classList.add('hidden');
     mostrarTab(tabActual);
     $('dash-act').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
@@ -431,7 +444,7 @@ function pintarDash() {
   const anuladas = INSC.length - act.length;
   const kpi = (l, v, s) => '<div class="kpi"><div class="l">' + l + '</div><div class="v gold-text">' + v + '</div><div class="s">' + (s || '&nbsp;') + '</div></div>';
   $('kpis').innerHTML =
-    kpi('Inscripciones', act.length, anuladas ? anuladas + ' anulada(s) no se cuentan' : 'obras inscriptas') +
+    kpi('Inscripciones', act.length, (anuladas ? anuladas + ' anulada(s) no se cuentan' : 'obras inscriptas') + (ESPERA.length ? ' · ⏳ ' + ESPERA.length + ' en lista de espera' : '')) +
     kpi('Academias', academias, 'instituciones distintas') +
     kpi('Participaciones', participantes, unicos.size + ' bailarines distintos') +
     kpiTurno('Mañana', act) + kpiTurno('Tarde', act) +
@@ -580,6 +593,55 @@ function abrirDetalle(id) {
     } catch (e) { toast('❌ ' + e.message); b.disabled = false; b.textContent = 'Guardar estado'; }
   };
 }
+/* ================= LISTA DE ESPERA ================= */
+$('e-buscar').addEventListener('input', pintarEspera);
+function pintarEspera() {
+  $('cnt-espera').textContent = ESPERA.length ? '(' + ESPERA.length + ')' : '';
+  const q = norm($('e-buscar').value);
+  const rows = ESPERA.filter(i => !q || norm([i.id, i.obra, i.academia, i.coreografo, i.modalidad].join(' ')).indexOf(q) > -1)
+    .sort((a, b) => fechaNum(a.fecha) - fechaNum(b.fecha));
+  $('t-espera').innerHTML = '<thead><tr><th>#</th><th>ID</th><th>Fecha</th><th>Academia</th><th>Obra</th><th>Modalidad</th><th>Categoría</th><th>Turno pref.</th><th>Tipo</th><th class="num">Cant.</th><th class="num">Monto ref.</th><th></th></tr></thead><tbody>' +
+    (rows.length ? rows.map((i, n) => '<tr class="click" data-id="' + esc(i.id) + '">' +
+      '<td class="muted">' + (n + 1) + '</td><td class="id">' + esc(i.id) + '</td><td class="muted" style="white-space:nowrap">' + esc(i.fecha) + '</td>' +
+      '<td>' + esc(i.academia) + '</td><td><b>' + esc(i.obra) + '</b></td><td>' + esc(i.modalidad) + '</td><td>' + esc(i.categoria) + '</td>' +
+      '<td>' + chipTurno(i.turno) + '</td><td>' + esc(tipoCorto(i.tipo)) + '</td><td class="num">' + i.cantidad + '</td><td class="num">' + gs(i.monto) + '</td>' +
+      '<td><button class="btn" data-promover="' + esc(i.id) + '" style="padding:.4rem .7rem;font-size:.75rem">✅ Pasar a inscripciones</button></td></tr>').join('')
+      : '<tr><td colspan="12" class="vacio">' + (ESPERA.length ? 'Nada coincide con la búsqueda' : 'No hay obras en lista de espera') + '</td></tr>') + '</tbody>';
+  $('e-cont').textContent = ESPERA.length + ' obra(s) · ' + ESPERA.reduce((s, i) => s + i.cantidad, 0) + ' participaciones';
+  $('t-espera').querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('[data-promover]')) return;
+    abrirDetalleEspera(tr.dataset.id);
+  }));
+  $('t-espera').querySelectorAll('[data-promover]').forEach(b => b.addEventListener('click', () => promover(b.dataset.promover, b)));
+}
+
+function abrirDetalleEspera(id) {
+  const i = ESPERA.find(x => x.id === id);
+  if (!i) return;
+  INSC.push(i); abrirDetalle(id); INSC.pop();
+  const sel = $('m-estado'); if (sel) sel.closest('.estado-row').innerHTML = '<span class="chip chip-pend">⏳ En lista de espera</span> <button class="btn" id="m-promover">✅ Pasar a inscripciones</button>';
+  const b = $('m-promover'); if (b) b.onclick = () => { $('modal-root').innerHTML = ''; promover(id); };
+}
+
+async function promover(id, btn) {
+  const i = ESPERA.find(x => x.id === id);
+  if (!i) return;
+  const t = i.turno || 'Tarde';
+  if (dirty && !window.confirm('Tenés cambios sin guardar en el orden tentativo y se van a perder al recargar. ¿Seguir?')) return;
+  if (!window.confirm('¿Pasar "' + i.obra + '" (' + i.academia + ') a las inscripciones confirmadas?\n\nTurno: ' + t + '\nSe le asigna un ID nuevo CDC26- y queda con pago Pendiente.\nAcordate de avisarle a la academia para que realice el pago.')) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Pasando…'; }
+  try {
+    const j = await apiPost({ accion: 'promoverEspera', clave: CLAVE, id: id, turno: t });
+    if (!j.ok) throw new Error(j.error);
+    toast('✅ ' + i.obra + ' pasó a inscripciones con ID ' + j.id, 5000);
+    await cargar();
+    mostrarTab('espera');
+  } catch (e) {
+    toast('❌ ' + e.message, 6000);
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Pasar a inscripciones'; }
+  }
+}
+
 function waNum(t) { let d = String(t).replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '595' + d.slice(1); return d; }
 
 /* ================= ORDEN TENTATIVO ================= */
