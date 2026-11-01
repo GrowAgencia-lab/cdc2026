@@ -153,6 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
   bindEventos();
   pintarCostos();
   pintarLista();
+  pintarTurnos();
+  aplicarModoEspera();
   if (MODO_PREVIEW) $('preview-banner').style.display = 'block';
   cargarConfig();
   cargarAcademias();
@@ -174,6 +176,7 @@ async function cargarConfig() {
   pintarCostos();
   pintarBanco();
   pintarTurnos();
+  aplicarModoEspera();
   if (!CONFIG.abiertas) {
     const b = $('cerrado-banner');
     b.textContent = '🔒 ' + (CONFIG.mensajeCierre || 'Las inscripciones están cerradas.');
@@ -366,7 +369,7 @@ function validar(p) {
     if (radio('esceno') === 'si') req('esceno-desc', 'Describí los elementos');
   }
   if (p === 5) {
-    if (!radio('forma-pago')) ok = errSpan('pago', 'Elegí la forma de pago');
+    if (!enEspera() && !radio('forma-pago')) ok = errSpan('pago', 'Elegí la forma de pago');
   }
   if (!ok) {
     const first = document.querySelector('#sec-' + p + ' .campo.error, #sec-' + p + ' .err-msg[style*="block"]');
@@ -556,9 +559,26 @@ function pintarCostos() {
 /* 👉 Turnos cerrados a mano (cupo completo). Para reabrir, sacalo de la lista: [] */
 const TURNOS_CERRADOS = ['Mañana'];
 
+/* 👉 LISTA DE ESPERA: true = inscripciones cerradas, todo lo que entra queda en lista de espera (sin pago).
+      Para volver a abrir las inscripciones normales: false (y también en Codigo.gs) */
+const LISTA_DE_ESPERA = true;
+const enEspera = () => LISTA_DE_ESPERA || !!CONFIG.listaEspera;
+
+function aplicarModoEspera() {
+  const e = enEspera();
+  $('espera-banner').style.display = e ? 'block' : 'none';
+  $('espera-pago').style.display = e ? 'block' : 'none';
+  $('campo-pago').style.display = e ? 'none' : 'block';
+  if (e) { $('bloque-banco').style.display = 'none'; $('bloque-efectivo').style.display = 'none'; }
+  $('titulo-sec5').textContent = e ? 'Costo de referencia' : 'Costos y forma de pago';
+  if (!enviando) $('btn-enviar').textContent = textoBoton();
+  document.title = (e ? 'Lista de espera' : 'Inscripción') + ' — CUP Dance Competition 2026 · Gran Asunción';
+}
+function textoBoton() { return enEspera() ? 'Anotarme en lista de espera' : 'Enviar inscripción'; }
+
 function pintarTurnos() {
   const tu = CONFIG.turnos || {};
-  const cerrado = t => TURNOS_CERRADOS.indexOf(t) > -1 || (tu[t] && tu[t].lleno);
+  const cerrado = t => !enEspera() && (TURNOS_CERRADOS.indexOf(t) > -1 || (tu[t] && tu[t].lleno));
   const abiertos = ['Mañana', 'Tarde'].filter(t => !cerrado(t));
   let actual = radio('turno');
   if (actual && cerrado(actual)) actual = '';
@@ -574,7 +594,9 @@ function pintarTurnos() {
   }).join('');
   const llenos = ['Mañana', 'Tarde'].filter(cerrado);
   const hint = $('hint-turno');
-  if (llenos.length && abiertos.length) {
+  if (enEspera()) {
+    hint.innerHTML = 'Elegí tu <b>turno de preferencia</b>. Si se libera un lugar, la organización confirma el turno asignado.';
+  } else if (llenos.length && abiertos.length) {
     hint.innerHTML = '<span style="color:var(--warn);font-weight:700">⚠️ El turno ' + llenos.join(' y ').toLowerCase() + ' ya completó su cupo.</span> Las inscripciones siguen abiertas solo para el <b>turno ' + abiertos.join(' y ').toLowerCase() + '</b>.';
   } else if (!abiertos.length) {
     hint.innerHTML = '<span style="color:var(--err);font-weight:700">Todos los turnos completaron su cupo.</span>';
@@ -662,10 +684,10 @@ async function enviar() {
   try {
     const musica = radio('tipo-musica') === 'mp3' ? await subirArchivo($('file-musica').files[0], 'música') : null;
     const esceno = radio('esceno') === 'si' ? await subirArchivo($('file-esceno').files[0], 'foto de escenografía') : null;
-    const fp = radio('forma-pago');
-    const comprobante = fp !== 'Efectivo' ? await subirArchivo($('file-comp').files[0], 'comprobante') : null;
+    const fp = enEspera() ? 'Lista de espera (sin pago)' : radio('forma-pago');
+    const comprobante = !enEspera() && fp !== 'Efectivo' ? await subirArchivo($('file-comp').files[0], 'comprobante') : null;
 
-    estado('Guardando inscripción…');
+    estado(enEspera() ? 'Anotando en lista de espera…' : 'Guardando inscripción…');
     const datos = {
       accion: 'inscribir',
       email: val('email'), academia: val('academia'), director: val('director'), telefono: val('telefono'), ciudad: val('ciudad'),
@@ -676,7 +698,7 @@ async function enviar() {
       participantes: participantes.map(p => ({ nombre: p.nombre, documento: p.documento, fnac: p.fnac, edad: p.edad })),
       tipoMusica: radio('tipo-musica'), duracion: duracionTxt(), musica: musica,
       tieneEsceno: radio('esceno'), escenoDesc: radio('esceno') === 'si' ? val('esceno-desc') : '', esceno: esceno,
-      formaPago: fp, comprobante: comprobante, observaciones: val('observaciones')
+      formaPago: fp, comprobante: comprobante, observaciones: val('observaciones'), listaEspera: enEspera()
     };
     const r = await apiPost(datos, 1);
     if (r && r.turnoLleno) {
@@ -695,7 +717,7 @@ async function enviar() {
     enviando = false;
     window.onbeforeunload = null;
     btn.disabled = false;
-    btn.textContent = 'Enviar inscripción';
+    btn.textContent = textoBoton();
   }
 }
 
@@ -706,12 +728,18 @@ function exito(r, datos) {
   $('banner-img').style.display = 'none';
   $('ok-obra').textContent = datos.obra;
   $('ok-id').textContent = r.id;
-  $('ok-monto').textContent = 'Total: ' + gs(r.monto);
+  const esp = r.listaEspera || enEspera();
+  $('ok-titulo').textContent = esp ? '¡Quedaste en lista de espera!' : '¡Inscripción enviada!';
+  $('ok-texto').innerHTML = esp
+    ? 'Anotamos <b>' + esc(datos.obra) + '</b> en la lista de espera. Si se libera un lugar te vamos a contactar para confirmar. <b>No realices ningún pago todavía.</b> Te enviamos un email con el resumen.'
+    : 'Recibimos la inscripción de <b>' + esc(datos.obra) + '</b>. Te enviamos un email con el resumen completo.';
+  $('ok-monto').textContent = (esp ? 'Monto de referencia: ' : 'Total: ') + gs(r.monto);
   const wa = CONFIG.whatsapp || '595971588475';
   const msg = 'Hola! Envío el comprobante de la inscripción ' + r.id + ' — Obra: ' + datos.obra + ' — Academia: ' + datos.academia + ' — Total: ' + gs(r.monto);
   $('btn-wa').href = 'https://wa.me/' + wa.replace(/\D/g, '') + '?text=' + encodeURIComponent(msg);
-  $('btn-wa').style.display = datos.comprobante ? 'none' : 'block';
-  $('ok-wa-txt').style.display = datos.comprobante ? 'none' : 'block';
+  $('btn-wa').style.display = datos.comprobante || esp ? 'none' : 'block';
+  $('ok-wa-txt').style.display = datos.comprobante || esp ? 'none' : 'block';
+  $('btn-otra').textContent = esp ? '➕ Anotar otra obra de esta academia' : '➕ Inscribir otra obra de esta academia';
   $('exito').style.display = 'block';
   estado('');
   window.scrollTo({ top: 0, behavior: 'smooth' });
