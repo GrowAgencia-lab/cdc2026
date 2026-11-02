@@ -181,6 +181,7 @@ async function cargarConfig() {
     const b = $('cerrado-banner');
     b.textContent = '🔒 ' + (CONFIG.mensajeCierre || 'Las inscripciones están cerradas.');
     b.style.display = 'block';
+    $('espera-banner').style.display = 'none';
     $('main-form').style.display = 'none';
     $('progress-wrap').style.display = 'none';
   }
