@@ -174,6 +174,29 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
 .o-btns button:hover{color:var(--gold-l);border-color:var(--gold)}
 .o-head{background:transparent;border:none;font-size:.66rem;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700;padding-top:0;padding-bottom:0}
 .aviso-conf{font-size:.7rem;color:var(--warn);display:block}
+/* POR ACADEMIA */
+.acad-layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:1rem;align-items:start}
+@media(max-width:900px){.acad-layout{grid-template-columns:1fr}}
+.acad-list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:sticky;top:80px;max-height:calc(100vh - 100px);display:flex;flex-direction:column}
+@media(max-width:900px){.acad-list{position:static;max-height:340px}}
+.acad-list input{margin:.7rem;padding:.55rem .75rem;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.82rem}
+.acad-list input:focus{outline:none;border-color:var(--gold)}
+.acad-items{overflow-y:auto;flex:1}
+.acad-it{display:flex;justify-content:space-between;gap:.5rem;align-items:center;width:100%;text-align:left;background:none;border:none;border-top:1px solid var(--line);color:var(--txt);padding:.6rem .85rem;font-size:.82rem}
+.acad-it:hover{background:rgba(212,165,55,.06)}
+.acad-it.sel{background:rgba(212,165,55,.14);box-shadow:inset 3px 0 0 var(--gold)}
+.acad-it .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acad-it .ct{display:flex;gap:.25rem;flex-shrink:0}
+.acad-det{display:grid;gap:1rem;min-width:0}
+.acad-head{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:1rem 1.1rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start}
+.acad-head h3{font-size:1.35rem;text-transform:uppercase;margin-bottom:.2rem}
+.acad-head .info{font-size:.8rem;color:var(--txt2);display:flex;flex-wrap:wrap;gap:.3rem 1rem}
+.acad-head .acc{display:flex;gap:.4rem;flex-wrap:wrap}
+.acad-sum{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
+.acad-sec h4{font-family:var(--disp);font-size:1rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gold-l);margin:.2rem 0 .5rem}
+.acad-sec td:nth-child(3){min-width:280px}
+.acad-sec .id{white-space:nowrap}
+.acad-sec .pl{font-size:.72rem;color:var(--txt2);margin-top:.2rem;line-height:1.45}
 @media(max-width:900px){
   .o-item{grid-template-columns:24px 50px minmax(0,1fr) auto;row-gap:.2rem}
   .o-hora,.o-cell,.o-cant{display:none}
@@ -186,6 +209,8 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -213,6 +238,7 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <button class="tab active" data-tab="dash">📊 Dashboard</button>
         <button class="tab" data-tab="insc">📋 Inscripciones</button>
         <button class="tab" data-tab="orden">🔀 Orden tentativo</button>
+        <button class="tab" data-tab="acad">🏫 Por academia</button>
         <button class="tab" data-tab="espera">⏳ Lista de espera <span id="cnt-espera"></span></button>
       </nav>
       <div class="top-actions">
@@ -257,6 +283,18 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <span class="contador" id="f-cont"></span>
       </div>
       <div class="tbl-wrap"><table id="t-insc"></table></div>
+    </section>
+
+    <!-- POR ACADEMIA -->
+    <section id="tab-acad" class="hidden">
+      <div class="sec-title"><h2 class="gold-text">Por academia</h2><span class="sub">Elegí una academia para ver sus obras confirmadas y en lista de espera, descargar el PDF y enviarlo por WhatsApp.</span></div>
+      <div class="acad-layout">
+        <div class="acad-list">
+          <input type="search" id="a-buscar" placeholder="Buscar academia…"/>
+          <div class="acad-items" id="a-items"></div>
+        </div>
+        <div class="acad-det" id="a-det"><div class="panel vacio">Elegí una academia de la lista</div></div>
+      </div>
     </section>
 
     <!-- LISTA DE ESPERA -->
@@ -382,7 +420,7 @@ function mostrarTab(t) {
   tabActual = t;
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
   if (!DATA) return;
-  ['dash', 'insc', 'orden', 'espera'].forEach(x => $('tab-' + x).classList.toggle('hidden', x !== t));
+  ['dash', 'insc', 'orden', 'espera', 'acad'].forEach(x => $('tab-' + x).classList.toggle('hidden', x !== t));
 }
 
 /* ================= CARGA ================= */
@@ -393,7 +431,7 @@ $('btn-refrescar').addEventListener('click', () => {
 
 async function cargar() {
   $('cargando').classList.remove('hidden');
-  ['dash', 'insc', 'orden', 'espera'].forEach(x => $('tab-' + x).classList.add('hidden'));
+  ['dash', 'insc', 'orden', 'espera', 'acad'].forEach(x => $('tab-' + x).classList.add('hidden'));
   try {
     const j = await apiGet({ accion: 'admin', clave: CLAVE });
     if (!j.ok) {
@@ -406,7 +444,7 @@ async function cargar() {
     $('btn-sheet').href = j.sheetUrl;
     if (j.evento) $('ev-info').textContent = 'Sede ' + (j.evento.sede || '') + ' · ' + (j.evento.fecha || '');
     prepararOrden(j.orden);
-    pintarDash(); llenarFiltros(); pintarInsc(); pintarOrden(); pintarEspera();
+    pintarDash(); llenarFiltros(); pintarInsc(); pintarOrden(); pintarEspera(); pintarAcademias();
     $('cargando').classList.add('hidden');
     mostrarTab(tabActual);
     $('dash-act').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
@@ -640,6 +678,182 @@ async function promover(id, btn) {
     toast('❌ ' + e.message, 6000);
     if (btn) { btn.disabled = false; btn.textContent = '✅ Pasar a inscripciones'; }
   }
+}
+
+/* ================= POR ACADEMIA ================= */
+let ACADS = [];
+let acadSel = '';
+const STOP_AC = /\b(academia|de|del|la|las|los|y|estudio|escuela|danza|danzas|instituto|centro|studio|ballet)\b/g;
+function claveAcad(n) { return norm(n).replace(/[^a-z0-9 ]/g, ' ').replace(STOP_AC, ' ').replace(/\s+/g, '') || norm(n); }
+function armarAcademias() {
+  const m = {};
+  const add = (i, tipo) => {
+    const k = claveAcad(i.academia);
+    const a = m[k] = m[k] || { key: k, nombres: {}, of: [], es: [], anul: 0 };
+    a.nombres[i.academia.trim()] = (a.nombres[i.academia.trim()] || 0) + 1;
+    if (tipo === 'es') a.es.push(i); else if (i.estadoPago === 'Anulado') a.anul++; else a.of.push(i);
+  };
+  INSC.forEach(i => add(i, 'of'));
+  ESPERA.forEach(i => add(i, 'es'));
+  ACADS = Object.values(m).map(a => {
+    a.nombre = Object.keys(a.nombres).sort((x, y) => a.nombres[y] - a.nombres[x])[0];
+    const todas = a.of.concat(a.es).sort((x, y) => fechaNum(y.fecha) - fechaNum(x.fecha));
+    const ref = todas[0] || {};
+    a.director = ref.director || ''; a.telefono = ref.telefono || ''; a.email = ref.email || '';
+    a.of.sort((x, y) => fechaNum(x.fecha) - fechaNum(y.fecha));
+    a.es.sort((x, y) => fechaNum(x.fecha) - fechaNum(y.fecha));
+    return a;
+  }).sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'));
+}
+$('a-buscar').addEventListener('input', pintarListaAcad);
+function pintarAcademias() { armarAcademias(); pintarListaAcad(); if (acadSel) verAcademia(acadSel); }
+function pintarListaAcad() {
+  const q = norm($('a-buscar').value);
+  const lista = ACADS.filter(a => !q || norm(Object.keys(a.nombres).join(' ')).indexOf(q) > -1);
+  $('a-items').innerHTML = lista.length ? lista.map(a =>
+    '<button class="acad-it' + (a.key === acadSel ? ' sel' : '') + '" data-k="' + esc(a.key) + '"><span class="nm" title="' + esc(a.nombre) + '">' + esc(a.nombre) + '</span><span class="ct">' +
+    (a.of.length ? '<span class="chip chip-pag" title="Confirmadas">' + a.of.length + '</span>' : '') +
+    (a.es.length ? '<span class="chip chip-pend" title="En lista de espera">⏳ ' + a.es.length + '</span>' : '') + '</span></button>').join('')
+    : '<div class="vacio">Ninguna academia coincide</div>';
+  $('a-items').querySelectorAll('.acad-it').forEach(b => b.addEventListener('click', () => verAcademia(b.dataset.k)));
+}
+
+function tablaObrasHTML(lista, espera) {
+  if (!lista.length) return '<div class="vacio">' + (espera ? 'Sin obras en lista de espera' : 'Sin obras confirmadas') + '</div>';
+  return '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>ID</th><th>Obra</th><th>Modalidad</th><th>Categoría</th><th>' + (espera ? 'Turno pref.' : 'Turno') + '</th><th>Tipo</th><th class="num">Cant.</th><th>Coreógrafo/a</th><th>Dur.</th><th class="num">' + (espera ? 'Monto ref.' : 'Monto') + '</th>' + (espera ? '' : '<th>Pago</th>') + '</tr></thead><tbody>' +
+    lista.map((i, n) => '<tr class="click" data-id="' + esc(i.id) + '" data-es="' + (espera ? 1 : 0) + '"><td class="muted">' + (n + 1) + '</td><td class="id">' + esc(i.id) + '</td>' +
+      '<td><b>' + esc(i.obra) + '</b><div class="pl">' + i.participantes.map(p => esc(p.nombre) + (p.documento ? ' <span class="muted">(' + esc(p.documento) + ')</span>' : '')).join(' · ') + '</div></td>' +
+      '<td>' + esc(i.modalidad) + (i.estilo ? '<br><span class="muted">' + esc(i.estilo) + '</span>' : '') + '</td><td>' + esc(i.categoria) + '</td><td>' + chipTurno(i.turno) + '</td>' +
+      '<td>' + esc(tipoCorto(i.tipo)) + '</td><td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + esc(i.duracion) + '</td><td class="num">' + gs(i.monto) + '</td>' +
+      (espera ? '' : '<td>' + chipPago(i.estadoPago) + '</td>') + '</tr>').join('') + '</tbody></table></div>';
+}
+
+function verAcademia(k) {
+  const a = ACADS.find(x => x.key === k);
+  if (!a) { $('a-det').innerHTML = '<div class="panel vacio">Elegí una academia de la lista</div>'; return; }
+  acadSel = k;
+  $('a-items').querySelectorAll('.acad-it').forEach(b => b.classList.toggle('sel', b.dataset.k === k));
+  const partOf = a.of.reduce((s, i) => s + i.cantidad, 0);
+  const monto = a.of.reduce((s, i) => s + i.monto, 0);
+  const variantes = Object.keys(a.nombres);
+  $('a-det').innerHTML =
+    '<div class="acad-head"><div style="min-width:0"><h3 class="gold-text">' + esc(a.nombre) + '</h3>' +
+      '<div class="info">' + (a.director ? '<span>👤 ' + esc(a.director) + '</span>' : '') + (a.telefono ? '<span>📞 ' + esc(a.telefono) + '</span>' : '') + (a.email ? '<span>✉️ ' + esc(a.email) + '</span>' : '') + '</div>' +
+      (variantes.length > 1 ? '<div class="info" style="margin-top:.3rem;color:var(--warn)">⚠️ Nombre escrito de ' + variantes.length + ' formas: ' + variantes.map(esc).join(' · ') + '</div>' : '') +
+      '<div class="acad-sum"><span class="chip chip-pag">' + a.of.length + ' confirmada(s)</span><span class="chip chip-pend">⏳ ' + a.es.length + ' en espera</span><span class="chip chip-gold">' + partOf + ' participaciones</span><span class="chip chip-gold">' + gs(monto) + '</span>' + (a.anul ? '<span class="chip chip-anu">' + a.anul + ' anulada(s), no se incluyen</span>' : '') + '</div></div>' +
+      '<div class="acc"><button class="btn" id="a-pdf">📄 Descargar PDF</button>' +
+      (navigator.canShare ? '<button class="btn-line" id="a-share">📤 Compartir PDF</button>' : '') +
+      '<button class="btn-line" id="a-wa">💬 WhatsApp</button></div></div>' +
+    '<div class="panel acad-sec"><h4>✅ Inscripciones confirmadas (' + a.of.length + ')</h4>' + tablaObrasHTML(a.of, false) + '</div>' +
+    '<div class="panel acad-sec"><h4>⏳ Lista de espera (' + a.es.length + ')</h4>' + tablaObrasHTML(a.es, true) + '</div>';
+  $('a-pdf').onclick = () => descargarPDF(a);
+  $('a-wa').onclick = () => abrirWA(a);
+  if ($('a-share')) $('a-share').onclick = () => compartirPDF(a);
+  $('a-det').querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', () => tr.dataset.es === '1' ? abrirDetalleEspera(tr.dataset.id) : abrirDetalle(tr.dataset.id)));
+  if (window.innerWidth < 900) $('a-det').scrollIntoView({ behavior: 'smooth' });
+}
+
+let LOGO_DATA = null;
+async function logoData() {
+  if (LOGO_DATA !== null) return LOGO_DATA;
+  try {
+    const blob = await (await fetch('../logo.png')).blob();
+    LOGO_DATA = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(''); fr.readAsDataURL(blob); });
+  } catch (e) { LOGO_DATA = ''; }
+  return LOGO_DATA;
+}
+function nombreArchivo(a) { return 'CDC2026_' + a.nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') + '.pdf'; }
+
+async function armarPDF(a) {
+  if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('No se pudo cargar el generador de PDF. Revisá tu conexión y recargá la página.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const ev = (DATA && DATA.evento) || {};
+  const logo = await logoData();
+  doc.setFillColor(11, 10, 8); doc.rect(0, 0, W, 30, 'F');
+  doc.setFillColor(212, 165, 55); doc.rect(0, 30, W, 1.2, 'F');
+  if (logo) { try { doc.addImage(logo, 'PNG', 10, 3, 24, 24); } catch (e) {} }
+  doc.setTextColor(232, 194, 90); doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+  doc.text('CUP DANCE COMPETITION 2026', 40, 13);
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  doc.text('Circuito Latinoamericano de Danza · Sede ' + (ev.sede || 'Gran Asunción') + ' · ' + (ev.fecha || '') + (ev.lugar ? ' · ' + ev.lugar : ''), 40, 20);
+  doc.setTextColor(185, 173, 146); doc.setFontSize(8);
+  doc.text('Resumen generado el ' + new Date().toLocaleDateString('es-PY') + ' ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }), 40, 25.5);
+
+  let y = 40;
+  doc.setTextColor(28, 24, 16); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text(a.nombre.toUpperCase(), 10, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 80, 60);
+  y += 5.5;
+  doc.text([a.director ? 'Director/a: ' + a.director : '', a.telefono ? 'Tel.: ' + a.telefono : '', a.email ? 'Email: ' + a.email : ''].filter(Boolean).join('    '), 10, y);
+  y += 5;
+  const partOf = a.of.reduce((s, i) => s + i.cantidad, 0), monto = a.of.reduce((s, i) => s + i.monto, 0);
+  doc.text('Confirmadas: ' + a.of.length + ' obra(s) · ' + partOf + ' participaciones · Total ' + gs(monto) + '      Lista de espera: ' + a.es.length + ' obra(s)', 10, y);
+
+  const filas = (lista, espera) => lista.map((i, n) => [
+    String(n + 1), i.id, { content: i.obra, styles: { fontStyle: 'bold' } }, i.modalidad + (i.estilo ? ' — ' + i.estilo : ''), i.categoria, i.turno || '—',
+    tipoCorto(i.tipo), String(i.cantidad), i.coreografo || '', i.duracion || '', gs(i.monto),
+    i.participantes.map(p => p.nombre + (p.documento ? ' (' + p.documento + ')' : '')).join('\n')
+  ]);
+  const head = espera => [['#', 'ID', 'Obra', 'Modalidad', 'Categoría', espera ? 'Turno pref.' : 'Turno', 'Tipo', 'Cant.', 'Coreógrafo/a', 'Dur.', espera ? 'Monto ref.' : 'Monto', 'Participantes (CI)']];
+  const estilos = color => ({
+    theme: 'grid', styles: { fontSize: 7.4, cellPadding: 1.6, valign: 'top', lineColor: [226, 216, 194], lineWidth: 0.2, textColor: [28, 24, 16] },
+    headStyles: { fillColor: color, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.6 },
+    alternateRowStyles: { fillColor: [251, 249, 244] },
+    columnStyles: { 0: { cellWidth: 6 }, 1: { cellWidth: 27 }, 2: { cellWidth: 32 }, 3: { cellWidth: 27 }, 4: { cellWidth: 16 }, 5: { cellWidth: 14 }, 6: { cellWidth: 17 }, 7: { cellWidth: 11, halign: 'center' }, 8: { cellWidth: 26 }, 9: { cellWidth: 10 }, 10: { cellWidth: 20, halign: 'right' }, 11: { cellWidth: 'auto' } },
+    margin: { left: 10, right: 10, bottom: 14 }
+  });
+  const titulo = (txt, yy) => { doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(140, 100, 24); doc.text(txt, 10, yy); };
+  y += 9;
+  titulo('INSCRIPCIONES CONFIRMADAS (' + a.of.length + ')', y);
+  if (a.of.length) doc.autoTable(Object.assign({ startY: y + 2, head: head(false), body: filas(a.of, false) }, estilos([140, 100, 24])));
+  else { doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(120); doc.text('Sin obras confirmadas.', 10, y + 6); }
+  y = (a.of.length ? doc.lastAutoTable.finalY : y + 6) + 10;
+  if (y > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); y = 16; }
+  titulo('LISTA DE ESPERA (' + a.es.length + ')', y);
+  if (a.es.length) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+    doc.text('Estas obras todavía NO están confirmadas. Te contactaremos si se libera un lugar. No realizar pagos por ellas.', 10, y + 4.5);
+    doc.autoTable(Object.assign({ startY: y + 7, head: head(true), body: filas(a.es, true) }, estilos([110, 100, 80])));
+  } else { doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(120); doc.text('Sin obras en lista de espera.', 10, y + 6); }
+
+  const n = doc.internal.getNumberOfPages(), H = doc.internal.pageSize.getHeight();
+  for (let p = 1; p <= n; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+    doc.text('Por favor revisá nombres de obras, participantes, categorías y turnos, y avisanos cualquier corrección. Consultas: (0971) 588 475 · (0994) 281 511', 10, H - 6);
+    doc.text('Pág. ' + p + ' de ' + n, W - 10, H - 6, { align: 'right' });
+  }
+  return doc;
+}
+
+async function descargarPDF(a) {
+  const b = $('a-pdf'); b.disabled = true; b.textContent = 'Generando…';
+  try { (await armarPDF(a)).save(nombreArchivo(a)); toast('📄 PDF descargado: ' + nombreArchivo(a)); }
+  catch (e) { toast('❌ ' + e.message, 6000); }
+  finally { b.disabled = false; b.textContent = '📄 Descargar PDF'; }
+}
+
+async function compartirPDF(a) {
+  try {
+    const doc = await armarPDF(a);
+    const file = new File([doc.output('blob')], nombreArchivo(a), { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Inscripciones ' + a.nombre, text: mensajeWA(a) });
+    } else { doc.save(nombreArchivo(a)); toast('Este navegador no permite compartir archivos: se descargó el PDF'); }
+  } catch (e) { if (e.name !== 'AbortError') toast('❌ ' + e.message, 6000); }
+}
+
+function mensajeWA(a) {
+  return 'Hola' + (a.director ? ' ' + a.director.split(' ')[0] : '') + '! 👋 Te compartimos el resumen de las inscripciones de *' + a.nombre + '* para *CUP Dance Competition 2026* (' + ((DATA && DATA.evento && DATA.evento.fecha) || '22 de noviembre') + ').\n\n' +
+    '✅ Confirmadas: ' + a.of.length + ' obra(s)\n⏳ Lista de espera: ' + a.es.length + ' obra(s)\n\n' +
+    'Te pedimos que revises en el PDF adjunto los nombres de las obras, participantes, categorías y turnos, y nos avises si hay algo para corregir. ¡Gracias!';
+}
+function abrirWA(a) {
+  const num = a.telefono ? waNum(a.telefono) : '';
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(mensajeWA(a)), '_blank', 'noopener');
+  toast('Adjuntá en el chat el PDF descargado 📎', 5000);
 }
 
 function waNum(t) { let d = String(t).replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '595' + d.slice(1); return d; }
