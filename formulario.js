@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
   pintarLista();
   pintarTurnos();
   aplicarModoEspera();
+  if (INSCRIPCIONES_CERRADAS) mostrarCerrado();
   if (MODO_PREVIEW) $('preview-banner').style.display = 'block';
   cargarConfig();
   cargarAcademias();
@@ -177,6 +178,7 @@ async function cargarConfig() {
   pintarBanco();
   pintarTurnos();
   aplicarModoEspera();
+  if (INSCRIPCIONES_CERRADAS) { mostrarCerrado(); return; }
   if (!CONFIG.abiertas) {
     const b = $('cerrado-banner');
     b.textContent = '🔒 ' + (CONFIG.mensajeCierre || 'Las inscripciones están cerradas.');
@@ -563,6 +565,21 @@ const TURNOS_CERRADOS = ['Mañana'];
 /* 👉 LISTA DE ESPERA: true = inscripciones cerradas, todo lo que entra queda en lista de espera (sin pago).
       Para volver a abrir las inscripciones normales: false (y también en Codigo.gs) */
 const LISTA_DE_ESPERA = true;
+
+/* 👉 CIERRE TOTAL: true = inscripciones Y lista de espera cerradas (no se ve el formulario).
+      Para volver a abrir: false (y también en Codigo.gs) */
+const INSCRIPCIONES_CERRADAS = true;
+const MENSAJE_CIERRE = 'Inscripciones cerradas. Se completaron los cupos y también la lista de espera. ¡Gracias por participar! Consultas: (0971) 588 475 · (0994) 281 511';
+
+function mostrarCerrado(msg) {
+  const b = $('cerrado-banner');
+  b.innerHTML = '<div style="font-family:Oswald,Arial Narrow,sans-serif;font-size:1.4rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:.3rem">🔒 Inscripciones cerradas</div>' + esc(msg || MENSAJE_CIERRE);
+  b.style.display = 'block';
+  $('espera-banner').style.display = 'none';
+  $('preview-banner').style.display = 'none';
+  $('main-form').style.display = 'none';
+  $('progress-wrap').style.display = 'none';
+}
 const enEspera = () => LISTA_DE_ESPERA || !!CONFIG.listaEspera;
 
 function aplicarModoEspera() {
