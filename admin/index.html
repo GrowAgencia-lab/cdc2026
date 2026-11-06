@@ -196,6 +196,19 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
 .acad-sec h4{font-family:var(--disp);font-size:1rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gold-l);margin:.2rem 0 .5rem}
 .acad-sec td:nth-child(3){min-width:280px}
 .acad-sec .id{white-space:nowrap}
+.ed-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+@media(max-width:600px){.ed-grid{grid-template-columns:1fr}}
+.ed-f{display:flex;flex-direction:column;gap:.25rem;min-width:0}
+.ed-f.full{grid-column:1/-1}
+.ed-f label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--gold-l)}
+.ed-f input,.ed-f select,.ed-f textarea,.ed-p input{padding:.5rem .65rem;border-radius:8px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.85rem;font-family:inherit;min-width:0}
+.ed-f input:focus,.ed-f select:focus,.ed-f textarea:focus,.ed-p input:focus{outline:none;border-color:var(--gold)}
+.ed-f select option{background:var(--card)}
+.ed-p{display:grid;grid-template-columns:24px minmax(0,1fr) 140px 32px;gap:.4rem;align-items:center;margin-bottom:.35rem}
+.ed-p .n{color:var(--muted);font-family:var(--disp);text-align:center}
+.ed-p button{background:var(--bg2);border:1px solid var(--line);color:var(--err);border-radius:6px;height:32px}
+@media(max-width:600px){.ed-p{grid-template-columns:20px minmax(0,1fr) 100px 30px}}
+.ed-aviso{font-size:.78rem;color:var(--warn);min-height:1.1em}
 .acad-sec .pl{font-size:.72rem;color:var(--txt2);margin-top:.2rem;line-height:1.45}
 @media(max-width:900px){
   .o-item{grid-template-columns:24px 50px minmax(0,1fr) auto;row-gap:.2rem}
@@ -720,12 +733,13 @@ function pintarListaAcad() {
 
 function tablaObrasHTML(lista, espera) {
   if (!lista.length) return '<div class="vacio">' + (espera ? 'Sin obras en lista de espera' : 'Sin obras confirmadas') + '</div>';
-  return '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>ID</th><th>Obra</th><th>Modalidad</th><th>Categoría</th><th>' + (espera ? 'Turno pref.' : 'Turno') + '</th><th>Tipo</th><th class="num">Cant.</th><th>Coreógrafo/a</th><th>Dur.</th><th class="num">' + (espera ? 'Monto ref.' : 'Monto') + '</th>' + (espera ? '' : '<th>Pago</th>') + '</tr></thead><tbody>' +
+  return '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>ID</th><th>Obra</th><th>Modalidad</th><th>Categoría</th><th>' + (espera ? 'Turno pref.' : 'Turno') + '</th><th>Tipo</th><th class="num">Cant.</th><th>Coreógrafo/a</th><th>Dur.</th><th class="num">' + (espera ? 'Monto ref.' : 'Monto') + '</th>' + (espera ? '' : '<th>Pago</th>') + '<th></th></tr></thead><tbody>' +
     lista.map((i, n) => '<tr class="click" data-id="' + esc(i.id) + '" data-es="' + (espera ? 1 : 0) + '"><td class="muted">' + (n + 1) + '</td><td class="id">' + esc(i.id) + '</td>' +
       '<td><b>' + esc(i.obra) + '</b><div class="pl">' + i.participantes.map(p => esc(p.nombre) + (p.documento ? ' <span class="muted">(' + esc(p.documento) + ')</span>' : '')).join(' · ') + '</div></td>' +
       '<td>' + esc(i.modalidad) + (i.estilo ? '<br><span class="muted">' + esc(i.estilo) + '</span>' : '') + '</td><td>' + esc(i.categoria) + '</td><td>' + chipTurno(i.turno) + '</td>' +
       '<td>' + esc(tipoCorto(i.tipo)) + '</td><td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + esc(i.duracion) + '</td><td class="num">' + gs(i.monto) + '</td>' +
-      (espera ? '' : '<td>' + chipPago(i.estadoPago) + '</td>') + '</tr>').join('') + '</tbody></table></div>';
+      (espera ? '' : '<td>' + chipPago(i.estadoPago) + '</td>') +
+      '<td style="white-space:nowrap"><button class="btn-line" data-edit="' + esc(i.id) + '" title="Editar" style="padding:.35rem .55rem">✏️</button> <button class="btn-line" data-del="' + esc(i.id) + '" title="Eliminar" style="padding:.35rem .55rem;border-color:rgba(248,113,113,.5);color:var(--err)">🗑️</button></td></tr>').join('') + '</tbody></table></div>';
 }
 
 function verAcademia(k) {
@@ -749,7 +763,12 @@ function verAcademia(k) {
   $('a-pdf').onclick = () => descargarPDF(a);
   $('a-wa').onclick = () => abrirWA(a);
   if ($('a-share')) $('a-share').onclick = () => compartirPDF(a);
-  $('a-det').querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', () => tr.dataset.es === '1' ? abrirDetalleEspera(tr.dataset.id) : abrirDetalle(tr.dataset.id)));
+  $('a-det').querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('[data-edit],[data-del]')) return;
+    tr.dataset.es === '1' ? abrirDetalleEspera(tr.dataset.id) : abrirDetalle(tr.dataset.id);
+  }));
+  $('a-det').querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => abrirEditor(b.dataset.edit)));
+  $('a-det').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => eliminarObra(b.dataset.del)));
   if (window.innerWidth < 900) $('a-det').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -854,6 +873,103 @@ function abrirWA(a) {
   const num = a.telefono ? waNum(a.telefono) : '';
   window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(mensajeWA(a)), '_blank', 'noopener');
   toast('Adjuntá en el chat el PDF descargado 📎', 5000);
+}
+
+/* ================= EDITAR / ELIMINAR OBRA ================= */
+const TIPOS_FULL = ['Solista', 'Dúo', 'Trío', 'Cuarteto', 'Grupo Serie A (5 a 10)', 'Grupo Serie B (11 a 20)', 'Conjunto (21 en adelante)'];
+const RANGO_TIPO = { 'Solista': [1, 1], 'Dúo': [2, 2], 'Trío': [3, 3], 'Cuarteto': [4, 4], 'Grupo Serie A': [5, 10], 'Grupo Serie B': [11, 20], 'Conjunto': [21, 999] };
+function buscarObra(id) { return INSC.find(x => x.id === id) || ESPERA.find(x => x.id === id); }
+function opciones(lista, actual) {
+  const l = lista.slice(); if (actual && l.indexOf(actual) === -1) l.unshift(actual);
+  return l.map(v => '<option' + (v === actual ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
+}
+
+function abrirEditor(id) {
+  const i = buscarObra(id);
+  if (!i) return;
+  const esEspera = ESPERA.indexOf(i) > -1;
+  const tipoActual = TIPOS_FULL.find(t => t.indexOf(tipoCorto(i.tipo)) === 0) || i.tipo;
+  const f = (lbl, html, full) => '<div class="ed-f' + (full ? ' full' : '') + '"><label>' + lbl + '</label>' + html + '</div>';
+  const inp = (idc, v, ph) => '<input id="' + idc + '" value="' + esc(v || '') + '"' + (ph ? ' placeholder="' + ph + '"' : '') + '/>';
+  $('modal-root').innerHTML =
+    '<div class="modal-bg" id="mbg"><div class="modal">' +
+    '<div class="modal-head"><div><span class="id">' + esc(i.id) + (esEspera ? ' · LISTA DE ESPERA' : '') + '</span><h3 class="gold-text">Editar obra</h3><span class="muted">' + esc(i.academia) + '</span></div><button class="x" id="mx" aria-label="Cerrar">✕</button></div>' +
+    '<div class="modal-body">' +
+    '<div class="ed-grid">' +
+      f('Nombre de la obra', inp('ed-obra', i.obra), true) +
+      f('Academia', inp('ed-academia', i.academia), true) +
+      f('Modalidad', '<select id="ed-modalidad">' + opciones(MODS_ORDEN, i.modalidad) + '</select>') +
+      f('Estilo / División', inp('ed-estilo', i.estilo, 'Ej: Proyección')) +
+      f('Categoría', '<select id="ed-categoria">' + opciones(CATS_ORDEN, i.categoria) + '</select>') +
+      f('Tipo de participación', '<select id="ed-tipo">' + opciones(TIPOS_FULL, tipoActual) + '</select>') +
+      f(esEspera ? 'Turno preferido' : 'Turno', '<select id="ed-turno">' + opciones(['Mañana', 'Tarde'], i.turno) + '</select>') +
+      f('Duración (m:ss)', inp('ed-duracion', i.duracion, '2:30')) +
+      f('Coreógrafo/a', inp('ed-coreografo', i.coreografo)) +
+      f('Maestro/a preparador/a', inp('ed-preparador', i.preparador)) +
+      f('Compite por coreografía', '<select id="ed-coreo">' + opciones(['NO', 'SI'], String(i.compiteCoreo || 'NO').toUpperCase()) + '</select>') +
+      (esEspera ? '' : f('Estado de pago', '<select id="ed-pago">' + opciones(['Pendiente', 'Pago parcial', 'Pagado', 'Anulado'], i.estadoPago) + '</select>')) +
+      f('Director/a', inp('ed-director', i.director)) +
+      f('Teléfono', inp('ed-telefono', i.telefono)) +
+      f('Observaciones', '<textarea id="ed-obs" rows="2">' + esc(i.observaciones || '') + '</textarea>', true) +
+    '</div>' +
+    '<div><h3 style="font-size:.95rem;text-transform:uppercase;color:var(--gold-l);margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:baseline">Participantes <small id="ed-cnt" style="font-family:var(--body);font-size:.75rem;color:var(--txt2);text-transform:none"></small></h3>' +
+      '<div id="ed-parts"></div><button class="btn-line" id="ed-add" type="button">+ Agregar participante</button>' +
+      '<div class="ed-aviso" id="ed-aviso" style="margin-top:.4rem"></div></div>' +
+    '<div style="display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap"><button class="btn-line" id="ed-cancel">Cancelar</button><button class="btn" id="ed-save">💾 Guardar cambios</button></div>' +
+    '<div class="muted" style="font-size:.74rem">Al guardar se actualiza la ficha en el Sheet, la lista de participantes y el orden tentativo. El monto se recalcula solo.</div>' +
+    '</div></div></div>';
+  let parts = i.participantes.map(p => ({ nombre: p.nombre, documento: p.documento, fnac: p.fnac, edad: p.edad }));
+  const pintarParts = () => {
+    $('ed-parts').innerHTML = parts.map((p, n) => '<div class="ed-p"><span class="n">' + (n + 1) + '</span><input data-n="' + n + '" data-k="nombre" value="' + esc(p.nombre || '') + '" placeholder="Nombre completo"/><input data-n="' + n + '" data-k="documento" value="' + esc(p.documento || '') + '" placeholder="CI / DNI"/><button type="button" data-q="' + n + '" title="Quitar">✕</button></div>').join('') || '<div class="vacio">Sin participantes</div>';
+    $('ed-parts').querySelectorAll('input').forEach(el => el.addEventListener('input', () => { parts[el.dataset.n][el.dataset.k] = el.value; revisar(); }));
+    $('ed-parts').querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => { parts.splice(Number(b.dataset.q), 1); pintarParts(); }));
+    revisar();
+  };
+  const revisar = () => {
+    const t = tipoCorto($('ed-tipo').value), r = RANGO_TIPO[t], n = parts.filter(p => String(p.nombre || '').trim()).length;
+    $('ed-cnt').textContent = n + ' cargado(s)';
+    $('ed-aviso').textContent = r && (n < r[0] || n > r[1]) ? '⚠️ ' + t + ' lleva ' + (r[0] === r[1] ? r[0] : r[0] + (r[1] < 999 ? ' a ' + r[1] : ' o más')) + ' participante(s) y hay ' + n + '. Revisá el tipo o la lista.' : '';
+  };
+  pintarParts();
+  $('ed-tipo').addEventListener('change', revisar);
+  $('ed-add').onclick = () => { parts.push({ nombre: '', documento: '' }); pintarParts(); const ins = $('ed-parts').querySelectorAll('input[data-k="nombre"]'); ins[ins.length - 1].focus(); };
+  const cerrar = () => $('modal-root').innerHTML = '';
+  $('mx').onclick = cerrar; $('ed-cancel').onclick = cerrar;
+  $('ed-save').onclick = async () => {
+    const lista = parts.filter(p => String(p.nombre || '').trim());
+    if (!lista.length) { toast('La obra tiene que tener al menos un participante'); return; }
+    if (!$('ed-obra').value.trim()) { toast('El nombre de la obra no puede quedar vacío'); return; }
+    if (dirty && !window.confirm('Tenés cambios sin guardar en el orden tentativo y se van a perder al recargar. ¿Seguir?')) return;
+    const cambios = {
+      obra: $('ed-obra').value, academia: $('ed-academia').value, modalidad: $('ed-modalidad').value, estilo: $('ed-estilo').value,
+      categoria: $('ed-categoria').value, tipo: $('ed-tipo').value, turno: $('ed-turno').value, duracion: $('ed-duracion').value,
+      coreografo: $('ed-coreografo').value, preparador: $('ed-preparador').value, compiteCoreo: $('ed-coreo').value,
+      director: $('ed-director').value, telefono: $('ed-telefono').value, observaciones: $('ed-obs').value
+    };
+    if ($('ed-pago')) cambios.estadoPago = $('ed-pago').value;
+    const b = $('ed-save'); b.disabled = true; b.textContent = 'Guardando…';
+    try {
+      const j = await apiPost({ accion: 'editarObra', clave: CLAVE, id: id, cambios: cambios, participantes: lista });
+      if (!j.ok) throw new Error(j.error);
+      cerrar();
+      toast('✅ Cambios guardados en ' + id + ' · Monto ' + gs(j.monto), 4500);
+      acadSel = claveAcad(cambios.academia);
+      await cargar();
+    } catch (e) { toast('❌ ' + e.message, 6000); b.disabled = false; b.textContent = '💾 Guardar cambios'; }
+  };
+}
+
+async function eliminarObra(id) {
+  const i = buscarObra(id);
+  if (!i) return;
+  if (!window.confirm('¿Eliminar "' + i.obra + '" (' + i.academia + ', ' + i.id + ')?\n\nSe borra de las inscripciones, de los participantes y del orden tentativo.\nQueda un respaldo en la hoja "Eliminadas" del Sheet.')) return;
+  if (dirty && !window.confirm('Tenés cambios sin guardar en el orden tentativo y se van a perder al recargar. ¿Seguir?')) return;
+  try {
+    const j = await apiPost({ accion: 'eliminarObra', clave: CLAVE, id: id });
+    if (!j.ok) throw new Error(j.error);
+    toast('🗑️ ' + i.obra + ' eliminada', 4500);
+    await cargar();
+  } catch (e) { toast('❌ ' + e.message, 6000); }
 }
 
 function waNum(t) { let d = String(t).replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '595' + d.slice(1); return d; }
