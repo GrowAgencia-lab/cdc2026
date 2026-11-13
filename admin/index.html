@@ -154,6 +154,10 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
 .orden-list{display:grid;gap:.35rem}
 .o-item{display:grid;grid-template-columns:28px 54px 64px minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) 46px auto;gap:.6rem;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.5rem .6rem;font-size:.8rem}
 .o-item.dim{opacity:.25}
+.o-item.oculto{display:none}
+.acad-orden{background:var(--card);border:1px solid var(--gold-d);border-radius:12px;padding:.8rem 1rem;margin-bottom:.7rem;display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;align-items:center}
+.acad-orden .nums{font-size:.82rem;color:var(--txt2);line-height:1.7}
+.acad-orden .nums b{color:var(--gold-l);font-family:var(--disp);font-size:.95rem}
 .o-item.grupo{margin-top:.9rem;position:relative}
 .o-item.grupo::before{content:attr(data-grupo);position:absolute;top:-1.15rem;left:.2rem;font-size:.66rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .o-item.hit{border-color:var(--gold);box-shadow:0 0 0 2px rgba(212,165,55,.25)}
@@ -344,11 +348,13 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         </select>
         <button class="btn-line" id="o-auto" title="Reordena todas las obras según la prioridad elegida">⚡ Ordenar automático</button>
         <button class="btn-line" id="o-agrupar" title="Pone todas las de la mañana primero y las de la tarde después, sin cambiar el orden dentro de cada turno">☀️/🌙 Solo agrupar turno</button>
+        <select id="o-acad" title="Ver solo las obras de una academia, con sus números de orden" style="padding:.45rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.8rem;max-width:240px"><option value="">🏫 Todas las academias</option></select>
         <input type="search" id="o-buscar" placeholder="Buscar en el orden…"/>
         <span class="sin-guardar hidden" id="o-dirty">⚠️ Cambios sin guardar</span>
         <button class="btn" id="o-guardar">💾 Guardar orden</button>
       </div>
       <div class="orden-resumen" id="o-resumen"></div>
+      <div id="o-acad-info"></div>
       <div class="o-item o-head"><span></span><span>N°</span><span>Hora</span><span>Obra · ID</span><span>Academia</span><span>Categoría · Modalidad</span><span>Tipo</span><span style="text-align:center">Cant.</span><span></span></div>
       <div class="orden-list" id="o-lista"></div>
     </section>
@@ -729,7 +735,7 @@ function armarAcademias() {
   }).sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'));
 }
 $('a-buscar').addEventListener('input', pintarListaAcad);
-function pintarAcademias() { armarAcademias(); pintarListaAcad(); if (acadSel) verAcademia(acadSel); }
+function pintarAcademias() { armarAcademias(); pintarListaAcad(); if (acadSel) verAcademia(acadSel); llenarAcadOrden(); }
 function pintarListaAcad() {
   const q = norm($('a-buscar').value);
   const lista = ACADS.filter(a => !q || norm(Object.keys(a.nombres).join(' ')).indexOf(q) > -1);
@@ -1153,6 +1159,7 @@ function pintarOrden() {
   const { horas, fin } = calcularHoras();
   const conf = conflictos();
   const q = norm($('o-buscar').value);
+  const fa = $('o-acad').value;
   const lista = $('o-lista');
   if (!ORDEN.length) { lista.innerHTML = '<div class="vacio">Todavía no hay inscripciones para ordenar</div>'; $('o-resumen').innerHTML = ''; return; }
   lista.innerHTML = ORDEN.map((id, n) => {
@@ -1160,8 +1167,9 @@ function pintarOrden() {
     const c = conf[id];
     const hit = q && norm([i.obra, i.academia, i.coreografo, i.id, i.modalidad, i.categoria].join(' ')).indexOf(q) > -1;
     const g = grupoDe(i), gPrev = n ? grupoDe(INSC.find(x => x.id === ORDEN[n - 1]) || {}) : null;
-    const nuevoGrupo = g !== gPrev;
-    return '<div class="o-item' + (c ? ' conflicto' : '') + (q ? (hit ? ' hit' : ' dim') : '') + (nuevoGrupo ? ' grupo' : '') + '" data-id="' + esc(id) + '"' + (nuevoGrupo ? ' data-grupo="' + esc(g) + '"' : '') + '>' +
+    const nuevoGrupo = !fa && g !== gPrev;
+    const oculto = fa && claveAcad(i.academia) !== fa;
+    return '<div class="o-item' + (oculto ? ' oculto' : '') + (c ? ' conflicto' : '') + (q ? (hit ? ' hit' : ' dim') : '') + (nuevoGrupo ? ' grupo' : '') + '" data-id="' + esc(id) + '"' + (nuevoGrupo ? ' data-grupo="' + esc(g) + '"' : '') + '>' +
       '<span class="handle" title="Arrastrar">⋮⋮</span>' +
       '<input class="o-pos" type="number" min="1" max="' + ORDEN.length + '" value="' + (n + 1) + '" data-id="' + esc(id) + '" title="Escribí el número y Enter para mover"/>' +
       '<span class="o-hora">' + horas[id] + '</span>' +
@@ -1190,6 +1198,73 @@ function pintarOrden() {
     const i = ORDEN.indexOf(b.dataset.id); moverA(b.dataset.id, i + 1 + Number(b.dataset.mv));
   }));
   activarArrastre();
+  pintarInfoAcadOrden(horas);
+}
+
+/* ---- Filtro por academia en el orden tentativo ---- */
+$('o-acad').addEventListener('change', () => { pintarOrden(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+function llenarAcadOrden() {
+  const sel = $('o-acad'), cur = sel.value;
+  sel.innerHTML = '<option value="">🏫 Todas las academias</option>' + ACADS.filter(a => a.of.length).map(a => '<option value="' + esc(a.key) + '">' + esc(a.nombre) + ' (' + a.of.length + ')</option>').join('');
+  sel.value = ACADS.some(a => a.key === cur) ? cur : '';
+  if (cur && sel.value === cur) pintarOrden();
+}
+function obrasAcadEnOrden(key) {
+  return ORDEN.map((id, n) => ({ n: n + 1, i: INSC.find(x => x.id === id) })).filter(x => x.i && claveAcad(x.i.academia) === key);
+}
+function pintarInfoAcadOrden(horas) {
+  const box = $('o-acad-info'), key = $('o-acad').value;
+  if (!key) { box.innerHTML = ''; return; }
+  const a = ACADS.find(x => x.key === key) || { nombre: '' };
+  const lista = obrasAcadEnOrden(key);
+  box.innerHTML = '<div class="acad-orden"><div class="nums"><div style="font-family:var(--disp);font-size:1.05rem;color:var(--gold-l);text-transform:uppercase">' + esc(a.nombre) + ' · ' + lista.length + ' obra(s)</div>' +
+    'Números de orden: ' + lista.map(x => '<b>' + x.n + '</b>').join(' · ') + '<br><span class="muted" style="font-size:.74rem">Vista filtrada: el orden general no cambia. Para mover obras volvé a "Todas las academias".' + (dirty ? ' ⚠️ Hay cambios sin guardar: guardá antes de enviar el PDF.' : '') + '</span></div>' +
+    '<div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn" id="o-acad-pdf">📄 PDF orden de esta academia</button><button class="btn-line" id="o-acad-wa">💬 WhatsApp</button><button class="btn-line" id="o-acad-x">✕ Ver todas</button></div></div>';
+  $('o-acad-x').onclick = () => { $('o-acad').value = ''; pintarOrden(); };
+  $('o-acad-pdf').onclick = () => pdfOrdenAcademia(a, lista, horas);
+  $('o-acad-wa').onclick = () => {
+    const ref = lista[0] ? lista[0].i : {};
+    const msg = 'Hola' + (ref.director ? ' ' + String(ref.director).split(' ')[0] : '') + '! 👋 Te compartimos el *orden tentativo* de las obras de *' + a.nombre + '* para *CUP Dance Competition 2026*:\n\n' +
+      lista.map(x => 'N° ' + x.n + ' — ' + x.i.obra + ' (' + (x.i.turno || '') + ', ~' + String(horas[x.i.id] || '').slice(0, 5) + ')').join('\n') +
+      '\n\nEs un orden tentativo y puede tener ajustes. Te adjuntamos el PDF. ¡Gracias!';
+    window.open('https://wa.me/' + (ref.telefono ? waNum(ref.telefono) : '') + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+  };
+}
+async function pdfOrdenAcademia(a, lista, horas) {
+  if (!window.jspdf || !window.jspdf.jsPDF) { toast('No se pudo cargar el generador de PDF. Recargá la página.', 5000); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const ev = (DATA && DATA.evento) || {};
+  const logo = await logoData();
+  doc.setFillColor(11, 10, 8); doc.rect(0, 0, W, 30, 'F'); doc.setFillColor(212, 165, 55); doc.rect(0, 30, W, 1.2, 'F');
+  if (logo) { try { doc.addImage(logo, 'PNG', 10, 3, 24, 24); } catch (e) {} }
+  doc.setTextColor(232, 194, 90); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('CUP DANCE COMPETITION 2026', 40, 13);
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  doc.text('ORDEN TENTATIVO · Sede ' + (ev.sede || 'Gran Asunción') + ' · ' + (ev.fecha || '') + (ev.lugar ? ' · ' + ev.lugar : ''), 40, 20);
+  doc.setTextColor(185, 173, 146); doc.setFontSize(8);
+  doc.text('Generado el ' + new Date().toLocaleDateString('es-PY') + ' ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }), 40, 25.5);
+  doc.setTextColor(28, 24, 16); doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(a.nombre.toUpperCase(), 10, 40);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 80, 60);
+  doc.text(lista.length + ' obra(s) · Números de orden: ' + lista.map(x => x.n).join(', '), 10, 45.5, { maxWidth: W - 20 });
+  doc.autoTable({
+    startY: 51,
+    head: [['N° orden', 'Hora aprox.', 'Turno', 'Obra', 'Modalidad', 'Categoría', 'Tipo', 'Cant.', 'Coreógrafo/a', 'Dur.']],
+    body: lista.map(x => [{ content: String(x.n), styles: { fontStyle: 'bold', fontSize: 11, halign: 'center' } }, String(horas[x.i.id] || '').slice(0, 5), x.i.turno || '', { content: x.i.obra, styles: { fontStyle: 'bold' } },
+      x.i.modalidad + (x.i.estilo ? ' — ' + x.i.estilo : ''), x.i.categoria, tipoCorto(x.i.tipo), String(x.i.cantidad), x.i.coreografo || '', x.i.duracion || '']),
+    theme: 'grid', styles: { fontSize: 8.5, cellPadding: 2, valign: 'middle', lineColor: [226, 216, 194], lineWidth: 0.2, textColor: [28, 24, 16] },
+    headStyles: { fillColor: [140, 100, 24], textColor: [255, 255, 255], fontStyle: 'bold' }, alternateRowStyles: { fillColor: [251, 249, 244] },
+    columnStyles: { 0: { cellWidth: 18 }, 1: { cellWidth: 20, halign: 'center' }, 2: { cellWidth: 18 }, 3: { cellWidth: 55 }, 7: { cellWidth: 12, halign: 'center' }, 9: { cellWidth: 13 } },
+    margin: { left: 10, right: 10, bottom: 14 }
+  });
+  const n = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= n; p++) {
+    doc.setPage(p); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+    doc.text('Orden TENTATIVO: puede tener ajustes. La hora es aproximada. Consultas: (0971) 588 475 · (0994) 281 511', 10, H - 6);
+    doc.text('Pág. ' + p + ' de ' + n, W - 10, H - 6, { align: 'right' });
+  }
+  doc.save('Orden_' + nombreArchivo(a));
+  toast('📄 PDF del orden descargado');
 }
 
 function mezcla() {
@@ -1252,6 +1327,7 @@ function activarArrastre() {
   if (typeof Sortable === 'undefined') return;
   if (sortable) sortable.destroy();
   sortable = Sortable.create($('o-lista'), {
+    disabled: !!$('o-acad').value,
     handle: '.handle', animation: 150, scroll: true, scrollSensitivity: 120, bubbleScroll: true,
     onEnd: ev => {
       if (ev.oldIndex === ev.newIndex) return;
