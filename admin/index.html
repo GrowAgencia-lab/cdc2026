@@ -209,6 +209,13 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
 .ed-p button{background:var(--bg2);border:1px solid var(--line);color:var(--err);border-radius:6px;height:32px}
 @media(max-width:600px){.ed-p{grid-template-columns:20px minmax(0,1fr) 100px 30px}}
 .ed-aviso{font-size:.78rem;color:var(--warn);min-height:1.1em}
+.mus-box{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:.8rem .9rem;display:grid;gap:.55rem}
+.mus-box h4{font-family:var(--disp);font-size:.95rem;text-transform:uppercase;color:var(--gold-l);letter-spacing:.5px;margin:0}
+.mus-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.mus-file{flex:1 1 220px;min-width:0;font-size:.8rem;color:var(--txt2)}
+.mus-file::file-selector-button{background:var(--card);color:var(--gold-l);border:1px solid var(--line2);border-radius:8px;padding:.4rem .7rem;margin-right:.6rem;font-weight:700;cursor:pointer}
+.mus-prog{height:6px;background:var(--line);border-radius:4px;overflow:hidden}
+.mus-prog div{height:100%;width:0;background:var(--grad);transition:width .2s}
 .acad-sec .pl{font-size:.72rem;color:var(--txt2);margin-top:.2rem;line-height:1.45}
 @media(max-width:900px){
   .o-item{grid-template-columns:24px 50px minmax(0,1fr) auto;row-gap:.2rem}
@@ -291,6 +298,7 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <select id="f-acad"><option value="">Todas las academias</option></select>
         <select id="f-tipo"><option value="">Todos los tipos</option></select>
         <select id="f-cat"><option value="">Todas las categorías</option></select>
+        <select id="f-coreo"><option value="">Coreografía: todas</option><option value="SI">★ Compiten coreografía</option><option value="NO">No compiten</option></select>
         <select id="f-turno"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option></select>
         <select id="f-pago"><option value="">Todos los pagos</option><option>Pendiente</option><option>Pago parcial</option><option>Pagado</option><option>Anulado</option></select>
         <span class="contador" id="f-cont"></span>
@@ -491,7 +499,7 @@ function pintarDash() {
   const academias = new Set(act.map(i => norm(i.academia))).size;
   const monto = act.reduce((s, i) => s + i.monto, 0);
   const pagado = act.filter(i => i.estadoPago === 'Pagado').reduce((s, i) => s + i.monto, 0);
-  const coreo = act.filter(i => String(i.compiteCoreo).toUpperCase() === 'SI').length;
+  const coreo = act.filter(esCoreo).length;
   const anuladas = INSC.length - act.length;
   const kpi = (l, v, s) => '<div class="kpi"><div class="l">' + l + '</div><div class="v gold-text">' + v + '</div><div class="s">' + (s || '&nbsp;') + '</div></div>';
   $('kpis').innerHTML =
@@ -552,8 +560,10 @@ function llenarFiltros() {
   opts('f-tipo', TIPOS_ORDEN, 'Todos los tipos');
   opts('f-cat', CATS_ORDEN, 'Todas las categorías');
 }
-['f-buscar', 'f-acad', 'f-tipo', 'f-cat', 'f-pago', 'f-turno'].forEach(id => $(id).addEventListener('input', pintarInsc));
+['f-buscar', 'f-acad', 'f-tipo', 'f-cat', 'f-pago', 'f-turno', 'f-coreo'].forEach(id => $(id).addEventListener('input', pintarInsc));
 
+function esCoreo(i) { const v = norm(i.compiteCoreo); return v === 'si' || v === 'true'; }
+function chipCoreo(i) { return esCoreo(i) ? '<span class="chip chip-gold">★ Sí</span>' : '<span class="muted">No</span>'; }
 function chipTurno(t) {
   if (!t) return '<span class="muted">—</span>';
   return '<span class="chip ' + (t === 'Mañana' ? 'chip-man' : 'chip-tar') + '">' + (t === 'Mañana' ? '☀️ ' : '🌙 ') + esc(t) + '</span>';
@@ -564,10 +574,10 @@ function chipPago(e) {
 }
 
 function pintarInsc() {
-  const fturno = $('f-turno').value;
+  const fturno = $('f-turno').value, fcoreo = $('f-coreo').value;
   const q = norm($('f-buscar').value), fa = $('f-acad').value, ft = $('f-tipo').value, fc = $('f-cat').value, fp = $('f-pago').value;
   let rows = INSC.filter(i =>
-    (!fturno || i.turno === fturno) && (!fa || i.academia.trim() === fa) && (!ft || tipoCorto(i.tipo) === ft) && (!fc || i.categoria === fc) && (!fp || i.estadoPago === fp) &&
+    (!fturno || i.turno === fturno) && (!fcoreo || esCoreo(i) === (fcoreo === 'SI')) && (!fa || i.academia.trim() === fa) && (!ft || tipoCorto(i.tipo) === ft) && (!fc || i.categoria === fc) && (!fp || i.estadoPago === fp) &&
     (!q || norm([i.id, i.obra, i.academia, i.coreografo, i.modalidad, i.director, i.participantes.map(p => p.nombre + ' ' + p.documento).join(' ')].join(' ')).indexOf(q) > -1));
   const k = sortInsc.k;
   rows.sort((a, b) => {
@@ -575,17 +585,17 @@ function pintarInsc() {
     if (k === 'fecha') { va = fechaNum(va); vb = fechaNum(vb); }
     return (typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es')) * sortInsc.dir;
   });
-  const cols = [['id', 'ID'], ['fecha', 'Fecha'], ['academia', 'Academia'], ['obra', 'Obra'], ['modalidad', 'Modalidad'], ['categoria', 'Categoría'], ['turno', 'Turno'], ['tipo', 'Tipo'], ['cantidad', 'Cant.'], ['coreografo', 'Coreógrafo/a'], ['duracion', 'Dur.'], ['tipoMusica', 'Música'], ['monto', 'Monto'], ['estadoPago', 'Pago']];
+  const cols = [['id', 'ID'], ['fecha', 'Fecha'], ['academia', 'Academia'], ['obra', 'Obra'], ['modalidad', 'Modalidad'], ['categoria', 'Categoría'], ['turno', 'Turno'], ['tipo', 'Tipo'], ['cantidad', 'Cant.'], ['coreografo', 'Coreógrafo/a'], ['compiteCoreo', 'Compite coreo.'], ['duracion', 'Dur.'], ['tipoMusica', 'Música'], ['monto', 'Monto'], ['estadoPago', 'Pago']];
   $('t-insc').innerHTML = '<thead><tr>' + cols.map(c => '<th class="' + (c[0] === 'cantidad' || c[0] === 'monto' ? 'num' : '') + '" data-k="' + c[0] + '">' + c[1] + (sortInsc.k === c[0] ? (sortInsc.dir > 0 ? ' ▲' : ' ▼') : '') + '</th>').join('') + '</tr></thead><tbody>' +
     (rows.length ? rows.map(i => '<tr class="click" data-id="' + esc(i.id) + '">' +
       '<td class="id">' + esc(i.id) + '</td><td class="muted" style="white-space:nowrap">' + esc(i.fecha) + '</td><td>' + esc(i.academia) + '</td>' +
       '<td><b>' + esc(i.obra) + '</b>' + (String(i.compiteCoreo).toUpperCase() === 'SI' ? ' <span class="chip chip-gold" title="Compite por coreografía">★ Coreo</span>' : '') + '</td>' +
       '<td>' + esc(i.modalidad) + (i.estilo ? '<br><span class="muted">' + esc(i.estilo) + '</span>' : '') + '</td><td>' + esc(i.categoria) + '</td><td>' + chipTurno(i.turno) + '</td><td>' + esc(tipoCorto(i.tipo)) + '</td>' +
-      '<td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + esc(i.duracion) + '</td>' +
+      '<td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + chipCoreo(i) + '</td><td>' + esc(i.duracion) + '</td>' +
       '<td>' + (i.linkMusica ? '<a class="chip chip-gold" href="' + esc(i.linkMusica) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">🎵 MP3</a>' : '<span class="muted">' + esc(i.tipoMusica) + '</span>') + '</td>' +
       '<td class="num" style="white-space:nowrap">' + gs(i.monto) + (i.comprobante ? '<br><a class="chip chip-gold" href="' + esc(i.comprobante) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">🧾 Comprobante</a>' : '') + '</td>' +
       '<td>' + chipPago(i.estadoPago) + '</td></tr>').join('')
-      : '<tr><td colspan="14" class="vacio">' + (INSC.length ? 'Ninguna inscripción coincide con el filtro' : 'Todavía no hay inscripciones') + '</td></tr>') + '</tbody>';
+      : '<tr><td colspan="15" class="vacio">' + (INSC.length ? 'Ninguna inscripción coincide con el filtro' : 'Todavía no hay inscripciones') + '</td></tr>') + '</tbody>';
   $('f-cont').textContent = rows.length + ' de ' + INSC.length + ' · ' + rows.reduce((s, i) => s + i.cantidad, 0) + ' participaciones · ' + gs(rows.reduce((s, i) => s + i.monto, 0));
   $('t-insc').querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
     const k2 = th.dataset.k; sortInsc = { k: k2, dir: sortInsc.k === k2 ? -sortInsc.dir : 1 }; pintarInsc();
@@ -733,13 +743,13 @@ function pintarListaAcad() {
 
 function tablaObrasHTML(lista, espera) {
   if (!lista.length) return '<div class="vacio">' + (espera ? 'Sin obras en lista de espera' : 'Sin obras confirmadas') + '</div>';
-  return '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>ID</th><th>Obra</th><th>Modalidad</th><th>Categoría</th><th>' + (espera ? 'Turno pref.' : 'Turno') + '</th><th>Tipo</th><th class="num">Cant.</th><th>Coreógrafo/a</th><th>Dur.</th><th class="num">' + (espera ? 'Monto ref.' : 'Monto') + '</th>' + (espera ? '' : '<th>Pago</th>') + '<th></th></tr></thead><tbody>' +
+  return '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>ID</th><th>Obra</th><th>Modalidad</th><th>Categoría</th><th>' + (espera ? 'Turno pref.' : 'Turno') + '</th><th>Tipo</th><th class="num">Cant.</th><th>Coreógrafo/a</th><th>Compite coreo.</th><th>Dur.</th><th>Música</th><th class="num">' + (espera ? 'Monto ref.' : 'Monto') + '</th>' + (espera ? '' : '<th>Pago</th>') + '<th></th></tr></thead><tbody>' +
     lista.map((i, n) => '<tr class="click" data-id="' + esc(i.id) + '" data-es="' + (espera ? 1 : 0) + '"><td class="muted">' + (n + 1) + '</td><td class="id">' + esc(i.id) + '</td>' +
       '<td><b>' + esc(i.obra) + '</b><div class="pl">' + i.participantes.map(p => esc(p.nombre) + (p.documento ? ' <span class="muted">(' + esc(p.documento) + ')</span>' : '')).join(' · ') + '</div></td>' +
       '<td>' + esc(i.modalidad) + (i.estilo ? '<br><span class="muted">' + esc(i.estilo) + '</span>' : '') + '</td><td>' + esc(i.categoria) + '</td><td>' + chipTurno(i.turno) + '</td>' +
-      '<td>' + esc(tipoCorto(i.tipo)) + '</td><td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + esc(i.duracion) + '</td><td class="num">' + gs(i.monto) + '</td>' +
+      '<td>' + esc(tipoCorto(i.tipo)) + '</td><td class="num">' + i.cantidad + '</td><td>' + esc(i.coreografo) + '</td><td>' + chipCoreo(i) + '</td><td>' + esc(i.duracion) + '</td><td>' + chipMusica(i) + '</td><td class="num">' + gs(i.monto) + '</td>' +
       (espera ? '' : '<td>' + chipPago(i.estadoPago) + '</td>') +
-      '<td style="white-space:nowrap"><button class="btn-line" data-edit="' + esc(i.id) + '" title="Editar" style="padding:.35rem .55rem">✏️</button> <button class="btn-line" data-del="' + esc(i.id) + '" title="Eliminar" style="padding:.35rem .55rem;border-color:rgba(248,113,113,.5);color:var(--err)">🗑️</button></td></tr>').join('') + '</tbody></table></div>';
+      '<td style="white-space:nowrap"><button class="btn-line" data-edit="' + esc(i.id) + '" title="Editar" style="padding:.35rem .55rem">✏️</button> <button class="btn-line" data-mus="' + esc(i.id) + '" title="Cargar o cambiar música" style="padding:.35rem .55rem">🎵</button> <button class="btn-line" data-del="' + esc(i.id) + '" title="Eliminar" style="padding:.35rem .55rem;border-color:rgba(248,113,113,.5);color:var(--err)">🗑️</button></td></tr>').join('') + '</tbody></table></div>';
 }
 
 function verAcademia(k) {
@@ -754,7 +764,7 @@ function verAcademia(k) {
     '<div class="acad-head"><div style="min-width:0"><h3 class="gold-text">' + esc(a.nombre) + '</h3>' +
       '<div class="info">' + (a.director ? '<span>👤 ' + esc(a.director) + '</span>' : '') + (a.telefono ? '<span>📞 ' + esc(a.telefono) + '</span>' : '') + (a.email ? '<span>✉️ ' + esc(a.email) + '</span>' : '') + '</div>' +
       (variantes.length > 1 ? '<div class="info" style="margin-top:.3rem;color:var(--warn)">⚠️ Nombre escrito de ' + variantes.length + ' formas: ' + variantes.map(esc).join(' · ') + '</div>' : '') +
-      '<div class="acad-sum"><span class="chip chip-pag">' + a.of.length + ' confirmada(s)</span><span class="chip chip-pend">⏳ ' + a.es.length + ' en espera</span><span class="chip chip-gold">' + partOf + ' participaciones</span><span class="chip chip-gold">' + gs(monto) + '</span>' + (a.anul ? '<span class="chip chip-anu">' + a.anul + ' anulada(s), no se incluyen</span>' : '') + '</div></div>' +
+      '<div class="acad-sum"><span class="chip chip-pag">' + a.of.length + ' confirmada(s)</span><span class="chip chip-pend">⏳ ' + a.es.length + ' en espera</span><span class="chip chip-gold">' + partOf + ' participaciones</span><span class="chip chip-gold">★ ' + a.of.filter(esCoreo).length + ' compiten coreografía</span><span class="chip chip-gold">' + gs(monto) + '</span>' + (a.anul ? '<span class="chip chip-anu">' + a.anul + ' anulada(s), no se incluyen</span>' : '') + '</div></div>' +
       '<div class="acc"><button class="btn" id="a-pdf">📄 Descargar PDF</button>' +
       (navigator.canShare ? '<button class="btn-line" id="a-share">📤 Compartir PDF</button>' : '') +
       '<button class="btn-line" id="a-wa">💬 WhatsApp</button></div></div>' +
@@ -764,10 +774,11 @@ function verAcademia(k) {
   $('a-wa').onclick = () => abrirWA(a);
   if ($('a-share')) $('a-share').onclick = () => compartirPDF(a);
   $('a-det').querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', e => {
-    if (e.target.closest('[data-edit],[data-del]')) return;
+    if (e.target.closest('[data-edit],[data-del],[data-mus],a')) return;
     tr.dataset.es === '1' ? abrirDetalleEspera(tr.dataset.id) : abrirDetalle(tr.dataset.id);
   }));
   $('a-det').querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => abrirEditor(b.dataset.edit)));
+  $('a-det').querySelectorAll('[data-mus]').forEach(b => b.addEventListener('click', () => abrirMusica(b.dataset.mus)));
   $('a-det').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => eliminarObra(b.dataset.del)));
   if (window.innerWidth < 900) $('a-det').scrollIntoView({ behavior: 'smooth' });
 }
@@ -812,15 +823,15 @@ async function armarPDF(a) {
 
   const filas = (lista, espera) => lista.map((i, n) => [
     String(n + 1), i.id, { content: i.obra, styles: { fontStyle: 'bold' } }, i.modalidad + (i.estilo ? ' — ' + i.estilo : ''), i.categoria, i.turno || '—',
-    tipoCorto(i.tipo), String(i.cantidad), i.coreografo || '', i.duracion || '', gs(i.monto),
+    tipoCorto(i.tipo), String(i.cantidad), i.coreografo || '', esCoreo(i) ? 'SÍ' : 'No', i.duracion || '', gs(i.monto),
     i.participantes.map(p => p.nombre + (p.documento ? ' (' + p.documento + ')' : '')).join('\n')
   ]);
-  const head = espera => [['#', 'ID', 'Obra', 'Modalidad', 'Categoría', espera ? 'Turno pref.' : 'Turno', 'Tipo', 'Cant.', 'Coreógrafo/a', 'Dur.', espera ? 'Monto ref.' : 'Monto', 'Participantes (CI)']];
+  const head = espera => [['#', 'ID', 'Obra', 'Modalidad', 'Categoría', espera ? 'Turno pref.' : 'Turno', 'Tipo', 'Cant.', 'Coreógrafo/a', 'Compite coreo.', 'Dur.', espera ? 'Monto ref.' : 'Monto', 'Participantes (CI)']];
   const estilos = color => ({
     theme: 'grid', styles: { fontSize: 7.4, cellPadding: 1.6, valign: 'top', lineColor: [226, 216, 194], lineWidth: 0.2, textColor: [28, 24, 16] },
     headStyles: { fillColor: color, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.6 },
     alternateRowStyles: { fillColor: [251, 249, 244] },
-    columnStyles: { 0: { cellWidth: 6 }, 1: { cellWidth: 27 }, 2: { cellWidth: 32 }, 3: { cellWidth: 27 }, 4: { cellWidth: 16 }, 5: { cellWidth: 14 }, 6: { cellWidth: 17 }, 7: { cellWidth: 11, halign: 'center' }, 8: { cellWidth: 26 }, 9: { cellWidth: 10 }, 10: { cellWidth: 20, halign: 'right' }, 11: { cellWidth: 'auto' } },
+    columnStyles: { 0: { cellWidth: 6 }, 1: { cellWidth: 26 }, 2: { cellWidth: 30 }, 3: { cellWidth: 24 }, 4: { cellWidth: 17 }, 5: { cellWidth: 13 }, 6: { cellWidth: 16 }, 7: { cellWidth: 10, halign: 'center' }, 8: { cellWidth: 24 }, 9: { cellWidth: 15, halign: 'center' }, 10: { cellWidth: 10 }, 11: { cellWidth: 19, halign: 'right' }, 12: { cellWidth: 'auto' } },
     margin: { left: 10, right: 10, bottom: 14 }
   });
   const titulo = (txt, yy) => { doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(140, 100, 24); doc.text(txt, 10, yy); };
@@ -887,6 +898,7 @@ function opciones(lista, actual) {
 function abrirEditor(id) {
   const i = buscarObra(id);
   if (!i) return;
+  MUSICA_CAMBIADA = false;
   const esEspera = ESPERA.indexOf(i) > -1;
   const tipoActual = TIPOS_FULL.find(t => t.indexOf(tipoCorto(i.tipo)) === 0) || i.tipo;
   const f = (lbl, html, full) => '<div class="ed-f' + (full ? ' full' : '') + '"><label>' + lbl + '</label>' + html + '</div>';
@@ -912,6 +924,7 @@ function abrirEditor(id) {
       f('Teléfono', inp('ed-telefono', i.telefono)) +
       f('Observaciones', '<textarea id="ed-obs" rows="2">' + esc(i.observaciones || '') + '</textarea>', true) +
     '</div>' +
+    '<div id="ed-musica">' + musicaWidgetHTML(i) + '</div>' +
     '<div><h3 style="font-size:.95rem;text-transform:uppercase;color:var(--gold-l);margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:baseline">Participantes <small id="ed-cnt" style="font-family:var(--body);font-size:.75rem;color:var(--txt2);text-transform:none"></small></h3>' +
       '<div id="ed-parts"></div><button class="btn-line" id="ed-add" type="button">+ Agregar participante</button>' +
       '<div class="ed-aviso" id="ed-aviso" style="margin-top:.4rem"></div></div>' +
@@ -931,9 +944,10 @@ function abrirEditor(id) {
     $('ed-aviso').textContent = r && (n < r[0] || n > r[1]) ? '⚠️ ' + t + ' lleva ' + (r[0] === r[1] ? r[0] : r[0] + (r[1] < 999 ? ' a ' + r[1] : ' o más')) + ' participante(s) y hay ' + n + '. Revisá el tipo o la lista.' : '';
   };
   pintarParts();
+  bindMusicaWidget(i);
   $('ed-tipo').addEventListener('change', revisar);
   $('ed-add').onclick = () => { parts.push({ nombre: '', documento: '' }); pintarParts(); const ins = $('ed-parts').querySelectorAll('input[data-k="nombre"]'); ins[ins.length - 1].focus(); };
-  const cerrar = () => $('modal-root').innerHTML = '';
+  const cerrar = () => { $('modal-root').innerHTML = ''; if (MUSICA_CAMBIADA) { MUSICA_CAMBIADA = false; if (!dirty) cargar(); else pintarAcademias(); } };
   $('mx').onclick = cerrar; $('ed-cancel').onclick = cerrar;
   $('ed-save').onclick = async () => {
     const lista = parts.filter(p => String(p.nombre || '').trim());
@@ -972,6 +986,84 @@ async function eliminarObra(id) {
   } catch (e) { toast('❌ ' + e.message, 6000); }
 }
 
+/* ================= MÚSICA (cargar / cambiar) ================= */
+function chipMusica(i) {
+  if (i.linkMusica) return '<a class="chip chip-gold" href="' + esc(i.linkMusica) + '" target="_blank" rel="noopener" title="Escuchar">🎵 MP3</a>';
+  const t = norm(i.tipoMusica);
+  if (t.indexOf('vivo') > -1) return '<span class="chip chip-tar">🎤 En vivo</span>';
+  return '<span class="chip chip-pend" title="' + esc(i.tipoMusica || 'Sin archivo') + '">Falta</span>';
+}
+function musicaWidgetHTML(i) {
+  return '<div class="mus-box"><h4>🎵 Música</h4>' +
+    '<div class="mus-row" id="mus-actual">' + (i.linkMusica
+      ? '<span>Tiene música cargada.</span> <a class="btn-line" href="' + esc(i.linkMusica) + '" target="_blank" rel="noopener">▶️ Escuchar actual</a>'
+      : '<span class="muted">Todavía no tiene música cargada' + (i.tipoMusica ? ' (' + esc(i.tipoMusica) + ')' : '') + '.</span>') + '</div>' +
+    '<div class="mus-row"><input type="file" class="mus-file" id="mus-file"/><button class="btn" type="button" id="mus-subir">' + (i.linkMusica ? '🔁 Reemplazar música' : '⬆️ Subir música') + '</button></div>' +
+    '<div class="mus-prog hidden" id="mus-prog"><div></div></div><div class="muted" style="font-size:.74rem" id="mus-estado">MP3 (o audio) de hasta 25 MB. ' + (i.linkMusica ? 'El archivo anterior se manda a la papelera de Drive.' : '') + '</div></div>';
+}
+function bindMusicaWidget(i) {
+  const btn = $('mus-subir');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const f = $('mus-file').files[0];
+    if (!f) { toast('Elegí primero el archivo de música'); return; }
+    if (!/\.(mp3|m4a|wav|aac|ogg)$/i.test(f.name) && !/^audio\//.test(f.type)) { toast('El archivo tiene que ser de audio (MP3)'); return; }
+    if (f.size > 25 * 1024 * 1024) { toast('El archivo supera los 25 MB'); return; }
+    btn.disabled = true; $('mus-file').disabled = true;
+    const prog = $('mus-prog'), barra = prog.firstChild;
+    prog.classList.remove('hidden');
+    try {
+      const up = await subirArchivoAdmin(f, p => { barra.style.width = Math.round(p * 90) + '%'; $('mus-estado').textContent = 'Subiendo… ' + Math.round(p * 100) + '%'; });
+      $('mus-estado').textContent = 'Guardando en Drive…';
+      const j = await apiPost({ accion: 'cambiarMusica', clave: CLAVE, id: i.id, musica: up });
+      if (!j.ok) throw new Error(j.error);
+      barra.style.width = '100%';
+      i.linkMusica = j.link; i.tipoMusica = 'MP3 (subido)';
+      $('mus-actual').innerHTML = '<span style="color:var(--ok);font-weight:700">✅ ' + (j.reemplazo ? 'Música reemplazada' : 'Música cargada') + '</span> <a class="btn-line" href="' + esc(j.link) + '" target="_blank" rel="noopener">▶️ Escuchar</a>';
+      $('mus-estado').textContent = j.nombre;
+      btn.textContent = '🔁 Reemplazar música';
+      toast('🎵 ' + (j.reemplazo ? 'Música reemplazada' : 'Música cargada') + ' en ' + i.id, 4500);
+      MUSICA_CAMBIADA = true;
+    } catch (e) {
+      $('mus-estado').textContent = '❌ ' + e.message;
+      toast('❌ ' + e.message, 6000);
+    } finally { btn.disabled = false; $('mus-file').disabled = false; $('mus-file').value = ''; }
+  };
+}
+let MUSICA_CAMBIADA = false;
+function abrirMusica(id) {
+  const i = buscarObra(id);
+  if (!i) return;
+  MUSICA_CAMBIADA = false;
+  $('modal-root').innerHTML = '<div class="modal-bg" id="mbg"><div class="modal" style="max-width:560px">' +
+    '<div class="modal-head"><div><span class="id">' + esc(i.id) + '</span><h3 class="gold-text">' + esc(i.obra) + '</h3><span class="muted">' + esc(i.academia) + ' · ' + esc(i.duracion || '') + '</span></div><button class="x" id="mx" aria-label="Cerrar">✕</button></div>' +
+    '<div class="modal-body">' + musicaWidgetHTML(i) + '</div></div></div>';
+  bindMusicaWidget(i);
+  const cerrar = () => { $('modal-root').innerHTML = ''; if (MUSICA_CAMBIADA && !dirty) cargar(); else if (MUSICA_CAMBIADA) pintarAcademias(); };
+  $('mx').onclick = cerrar;
+  $('mbg').addEventListener('click', e => { if (e.target.id === 'mbg') cerrar(); });
+}
+
+const CHUNK_ADMIN = 1.5 * 1024 * 1024;
+function leerChunkAdmin(file, a, b) {
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.onerror = () => rej(fr.error); fr.readAsDataURL(file.slice(a, b)); });
+}
+async function subirArchivoAdmin(file, onProg) {
+  const uploadId = 'adm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const total = Math.max(1, Math.ceil(file.size / CHUNK_ADMIN));
+  for (let k = 0; k < total; k++) {
+    const data = await leerChunkAdmin(file, k * CHUNK_ADMIN, Math.min(file.size, (k + 1) * CHUNK_ADMIN));
+    let ok = false, err;
+    for (let t = 0; t < 3 && !ok; t++) {
+      try { const r = await apiPost({ accion: 'chunk', uploadId: uploadId, idx: k, total: total, data: data }); if (!r.ok) throw new Error(r.error || 'Error al subir'); ok = true; }
+      catch (e) { err = e; await new Promise(r => setTimeout(r, 1200 * (t + 1))); }
+    }
+    if (!ok) throw err || new Error('No se pudo subir el archivo');
+    if (onProg) onProg((k + 1) / total);
+  }
+  return { uploadId: uploadId, total: total, nombre: file.name, mime: file.type || 'audio/mpeg' };
+}
+
 function waNum(t) { let d = String(t).replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '595' + d.slice(1); return d; }
 
 /* ================= ORDEN TENTATIVO ================= */
@@ -980,11 +1072,34 @@ function prepararOrden(guardado) {
   const set = new Set(vigentes);
   ORDEN_GUARDADO = (guardado || []).filter(id => set.has(id));
   const enOrden = new Set(ORDEN_GUARDADO);
-  // Nuevas inscripciones (todavía no ubicadas) van al final, en orden de llegada
-  const nuevas = INSC.filter(i => set.has(i.id) && !enOrden.has(i.id)).sort((a, b) => fechaNum(a.fecha) - fechaNum(b.fecha)).map(i => i.id);
-  ORDEN = ORDEN_GUARDADO.concat(nuevas);
-  setDirty(false);
+  const nuevas = INSC.filter(i => set.has(i.id) && !enOrden.has(i.id)).map(i => i.id);
+  const porLlegada = ids => ids.slice().sort((a, b) => fechaNum((INSC.find(x => x.id === a) || {}).fecha) - fechaNum((INSC.find(x => x.id === b) || {}).fecha));
+  const sinOrganizar = !ORDEN_GUARDADO.length || ORDEN_GUARDADO.join('|') === porLlegada(ORDEN_GUARDADO).join('|');
+  if (sinOrganizar) {
+    // Nunca se organizó (estaba por orden de llegada = agrupado por academia): se ordena por turno › modalidad › categoría › tipo
+    ORDEN = ordenarAuto(ORDEN_GUARDADO.concat(nuevas));
+    setDirty(ORDEN.length > 0);
+    return;
+  }
+  // Ya hay un orden armado: las nuevas se ubican dentro de su grupo (turno/modalidad/categoría/tipo), no al final
+  ORDEN = ORDEN_GUARDADO.slice();
+  ordenarAuto(nuevas).forEach(id => {
+    const c = compararIds(id);
+    let pos = ORDEN.length;
+    for (let k = ORDEN.length - 1; k >= 0; k--) { if (c(ORDEN[k]) >= 0) { pos = k + 1; break; } if (k === 0) pos = 0; }
+    ORDEN.splice(pos, 0, id);
+  });
+  setDirty(nuevas.length > 0);
 }
+
+function critActual() { return CRITERIOS[($('o-criterio') || {}).value] || CRITERIOS.tmct; }
+function infoId(id) { return INSC.find(x => x.id === id) || {}; }
+function cmpObras(a, b) { for (const k of critActual()) { const d = cmp(claveOrden(a, k), claveOrden(b, k)); if (d) return d; } return 0; }
+function ordenarAuto(ids) {
+  return ids.map((id, n) => ({ id, n, i: infoId(id) })).sort((a, b) => cmpObras(a.i, b.i) || fechaNum(a.i.fecha) - fechaNum(b.i.fecha) || a.n - b.n).map(x => x.id);
+}
+/** devuelve f(otroId) = signo de (nueva - otra) según el criterio */
+function compararIds(idNueva) { const a = infoId(idNueva); return otro => cmpObras(a, infoId(otro)); }
 
 function setDirty(v) { dirty = v; $('o-dirty').classList.toggle('hidden', !v); }
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
@@ -1095,7 +1210,7 @@ function claveOrden(i, k) {
   if (k === 'turno') return i.turno === 'Mañana' ? 0 : i.turno === 'Tarde' ? 1 : 2;
   if (k === 'categoria') return rankLista(CATS_ORDEN, i.categoria);
   if (k === 'tipo') return rankLista(TIPOS_ORDEN, tipoCorto(i.tipo));
-  if (k === 'modalidad') { const r = rankLista(MODS_ORDEN, i.modalidad); return r === 900 ? 900 + norm(i.modalidad) : r; }
+  if (k === 'modalidad') { const m = norm(i.modalidad); let r = MODS_ORDEN.findIndex(x => m.indexOf(norm(x)) === 0); return r < 0 ? 900 + m : r; }
   return 0;
 }
 function cmp(a, b) { return typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b)); }
@@ -1106,9 +1221,7 @@ $('o-auto').addEventListener('click', () => {
   if (!window.confirm('Esto reordena TODAS las obras por: ' + $('o-criterio').selectedOptions[0].text + '.\nEl orden manual actual se reemplaza (no se guarda hasta que toques Guardar). ¿Continuar?')) return;
   const crit = CRITERIOS[$('o-criterio').value];
   const info = id => INSC.find(x => x.id === id) || {};
-  ORDEN = ORDEN.map((id, n) => ({ id, n, i: info(id) }))
-    .sort((a, b) => { for (const k of crit) { const d = cmp(claveOrden(a.i, k), claveOrden(b.i, k)); if (d) return d; } return a.n - b.n; })
-    .map(x => x.id);
+  ORDEN = ordenarAuto(ORDEN);
   setDirty(true);
   pintarOrden();
   toast('⚡ Ordenado por ' + $('o-criterio').selectedOptions[0].text + '. Revisá y tocá Guardar.');
