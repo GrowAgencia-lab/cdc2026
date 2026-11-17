@@ -353,6 +353,7 @@ tfoot td{background:#000;font-weight:700;color:var(--gold-l)}
         <select id="o-acad" title="Ver solo las obras de una academia, con sus números de orden" style="padding:.45rem .6rem;border-radius:8px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.8rem;max-width:240px"><option value="">🏫 Todas las academias</option></select>
         <input type="search" id="o-buscar" placeholder="Buscar en el orden…"/>
         <span class="sin-guardar hidden" id="o-dirty">⚠️ Cambios sin guardar</span>
+        <button class="btn-line" id="o-pdf" title="Descargar el orden tentativo completo en PDF">📄 PDF</button>
         <button class="btn" id="o-guardar">💾 Guardar orden</button>
       </div>
       <div class="orden-resumen" id="o-resumen"></div>
@@ -1253,6 +1254,64 @@ function pintarInfoAcadOrden(horas) {
     window.open('https://wa.me/' + (ref.telefono ? waNum(ref.telefono) : '') + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
   };
 }
+$('o-pdf').addEventListener('click', () => {
+  const key = $('o-acad').value;
+  if (key) { const a = ACADS.find(x => x.key === key); if (a) { pdfOrdenAcademia(a, obrasAcadEnOrden(key), calcularHoras().horas); return; } }
+  pdfOrdenCompleto();
+});
+async function pdfOrdenCompleto() {
+  if (!window.jspdf || !window.jspdf.jsPDF) { toast('No se pudo cargar el generador de PDF. Recargá la página.', 5000); return; }
+  if (!ORDEN.length) { toast('No hay obras en el orden'); return; }
+  if (dirty) toast('⚠️ Tenés cambios sin guardar: el PDF muestra el orden tal como lo ves ahora', 5000);
+  const b = $('o-pdf'); b.disabled = true; b.textContent = 'Generando…';
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    const ev = (DATA && DATA.evento) || {};
+    const logo = await logoData();
+    const { horas, fin } = calcularHoras();
+    doc.setFillColor(11, 10, 8); doc.rect(0, 0, W, 30, 'F'); doc.setFillColor(212, 165, 55); doc.rect(0, 30, W, 1.2, 'F');
+    if (logo) { try { doc.addImage(logo, 'PNG', 10, 3, 24, 24); } catch (e) {} }
+    doc.setTextColor(232, 194, 90); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('CUP DANCE COMPETITION 2026 · ORDEN TENTATIVO', 40, 13);
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    doc.text('Sede ' + (ev.sede || 'Gran Asunción') + ' · ' + (ev.fecha || '') + (ev.lugar ? ' · ' + ev.lugar : ''), 40, 20);
+    doc.setTextColor(185, 173, 146); doc.setFontSize(8);
+    const nM = ORDEN.filter(id => infoId(id).turno === 'Mañana').length, nT = ORDEN.filter(id => infoId(id).turno === 'Tarde').length;
+    doc.text(ORDEN.length + ' obras · Mañana: ' + nM + ' · Tarde: ' + nT + ' · Inicio ' + ($('o-inicio').value || '09:00') + ' · Inicio tarde ' + ($('o-inicio-tarde').value || '14:00') + ' · Fin estimado ' + fin.slice(0, 5) + ' · Generado el ' + new Date().toLocaleDateString('es-PY') + ' ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' }), 40, 25.5);
+    const body = [];
+    let gPrev = null;
+    ORDEN.forEach((id, n) => {
+      const i = infoId(id);
+      const g = grupoDe(i);
+      if (g !== gPrev) {
+        body.push([{ content: g.toUpperCase(), colSpan: 11, styles: { fillColor: [40, 34, 22], textColor: [232, 194, 90], fontStyle: 'bold', fontSize: 8 } }]);
+        gPrev = g;
+      }
+      body.push([{ content: String(n + 1), styles: { fontStyle: 'bold', halign: 'center', fontSize: 9.5 } }, String(horas[id] || '').slice(0, 5), i.turno || '', { content: i.obra || id, styles: { fontStyle: 'bold' } },
+        i.academia || '', (i.modalidad || '') + (i.estilo ? ' — ' + i.estilo : ''), i.categoria || '', tipoCorto(i.tipo), String(i.cantidad || ''), i.coreografo || '', i.duracion || '']);
+    });
+    doc.autoTable({
+      startY: 36,
+      head: [['N°', 'Hora', 'Turno', 'Obra', 'Academia', 'Modalidad', 'Categoría', 'Tipo', 'Cant.', 'Coreógrafo/a', 'Dur.']],
+      body: body,
+      theme: 'grid', styles: { fontSize: 7.6, cellPadding: 1.5, valign: 'middle', lineColor: [226, 216, 194], lineWidth: 0.2, textColor: [28, 24, 16] },
+      headStyles: { fillColor: [140, 100, 24], textColor: [255, 255, 255], fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 11 }, 1: { cellWidth: 13, halign: 'center' }, 2: { cellWidth: 15 }, 3: { cellWidth: 45 }, 4: { cellWidth: 42 }, 5: { cellWidth: 36 }, 6: { cellWidth: 20 }, 7: { cellWidth: 21 }, 8: { cellWidth: 11, halign: 'center' }, 9: { cellWidth: 'auto' }, 10: { cellWidth: 11 } },
+      margin: { left: 8, right: 8, bottom: 14 }
+    });
+    const np = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= np; p++) {
+      doc.setPage(p); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+      doc.text('Orden TENTATIVO: puede tener ajustes. Las horas son aproximadas.', 8, H - 6);
+      doc.text('Pág. ' + p + ' de ' + np, W - 8, H - 6, { align: 'right' });
+    }
+    doc.save('CDC2026_Orden_Tentativo.pdf');
+    toast('📄 PDF del orden tentativo descargado');
+  } catch (e) { toast('❌ ' + e.message, 6000); }
+  finally { b.disabled = false; b.textContent = '📄 PDF'; }
+}
+
 async function pdfOrdenAcademia(a, lista, horas) {
   if (!window.jspdf || !window.jspdf.jsPDF) { toast('No se pudo cargar el generador de PDF. Recargá la página.', 5000); return; }
   const { jsPDF } = window.jspdf;
