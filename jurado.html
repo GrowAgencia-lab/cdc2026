@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Jurado — CUP Dance Competition 2026</title>
+<meta name="robots" content="noindex,nofollow"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Jurado CDC"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="icon" href="logo.png"/>
+<link rel="apple-touch-icon" href="logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;
+  --gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;
+  --ok:#4ADE80;--err:#F87171;--warn:#FBBF24;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);
+  --disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif;
+}
+html,body{background:var(--bg)}
+body{color:var(--txt);font-family:var(--body);font-size:15px;line-height:1.45;min-height:100vh;padding:14px 14px calc(110px + env(safe-area-inset-bottom));
+  background-image:radial-gradient(ellipse at 50% -10%,rgba(212,165,55,.16),transparent 60%)}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:12px}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none!important}
+.header{background:#000;border:1px solid var(--line2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.header img{width:48px;height:48px;filter:drop-shadow(0 4px 14px rgba(212,165,55,.4))}
+.header h1{font-family:var(--disp);font-size:1.15rem;text-transform:uppercase;letter-spacing:.5px;line-height:1.1}
+.header p{color:var(--txt2);font-size:.72rem}
+.jchip{margin-left:auto;text-align:right;font-size:.7rem;color:var(--txt2)}
+.jchip b{display:block;color:var(--gold-l);font-size:.85rem;font-family:var(--disp);letter-spacing:.3px}
+.jchip button{background:none;border:none;color:var(--muted);font-size:.66rem;text-decoration:underline;margin-top:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h2{font-family:var(--disp);font-size:1rem;text-transform:uppercase;letter-spacing:.6px;color:var(--gold-l);margin-bottom:10px}
+.btn{border:none;border-radius:12px;padding:.9rem 1rem;font-weight:800;font-size:.95rem;background:var(--grad);color:#1A1306;width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-line{border:1.5px solid var(--line2);background:transparent;color:var(--gold-l);border-radius:12px;padding:.7rem .9rem;font-weight:700;font-size:.85rem}
+.msg{font-size:.82rem;color:var(--txt2);text-align:center;padding:6px}
+.err{color:var(--err)}
+
+/* selección de jurado */
+.jlist{display:grid;gap:10px}
+.jbtn{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;border:1.5px solid var(--line2);background:var(--bg2);color:var(--txt);text-align:left;font-size:1rem;font-weight:700}
+.jbtn .n{width:38px;height:38px;border-radius:50%;background:var(--grad);color:#1A1306;display:grid;place-items:center;font-family:var(--disp);font-size:1.1rem}
+
+/* búsqueda */
+.buscar{display:flex;gap:8px}
+.buscar input{flex:1;min-width:0;padding:.8rem;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:1.2rem;font-weight:700;text-align:center}
+.buscar input:focus{outline:none;border-color:var(--gold)}
+.buscar .btn{width:auto;padding:.8rem 1.1rem}
+.prog{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.78rem;color:var(--txt2)}
+.prog .bar{flex:1;height:6px;border-radius:9px;background:var(--bg2);margin:0 10px;overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--grad);width:0}
+.btn-sm{background:none;border:1px solid var(--line);color:var(--txt2);border-radius:8px;padding:.3rem .55rem;font-size:.72rem;font-weight:700}
+
+/* lista de obras */
+.olist{display:grid;gap:6px;max-height:55vh;overflow:auto;margin-top:10px}
+.oitem{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;background:var(--bg2);border:1px solid var(--line);color:var(--txt);text-align:left;width:100%}
+.oitem .nro{font-family:var(--disp);font-size:1.05rem;color:var(--gold-l);min-width:38px}
+.oitem .t{flex:1;min-width:0}
+.oitem .t b{display:block;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oitem .t small{color:var(--muted);font-size:.7rem}
+.oitem .st{font-size:.72rem;font-weight:800;color:var(--muted)}
+.oitem.done{border-color:rgba(74,222,128,.35)}
+.oitem.done .st{color:var(--ok)}
+
+/* obra */
+.obra-top{display:flex;align-items:flex-start;gap:12px}
+.obra-nro{font-family:var(--disp);font-size:2.6rem;line-height:1;min-width:64px;text-align:center}
+.obra-nro small{display:block;font-size:.6rem;color:var(--muted);font-family:var(--body);letter-spacing:1px}
+.obra-tit{font-family:var(--disp);font-size:1.35rem;line-height:1.15;text-transform:uppercase}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{font-size:.7rem;font-weight:700;padding:.25rem .55rem;border-radius:20px;background:var(--bg2);border:1px solid var(--line);color:var(--txt2)}
+.tag.g{border-color:var(--gold-d);color:var(--gold-l)}
+.parts{margin-top:10px;font-size:.78rem;color:var(--txt2)}
+.parts b{color:var(--txt)}
+.ya{margin-top:10px;font-size:.78rem;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.35);color:var(--ok);padding:.5rem .7rem;border-radius:10px}
+.nav{display:flex;gap:8px;margin-top:12px}
+.nav button{flex:1}
+
+/* puntaje */
+.notas{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.nota{aspect-ratio:1;border-radius:12px;border:1.5px solid var(--line2);background:var(--bg2);color:var(--txt);font-family:var(--disp);font-size:1.5rem;font-weight:700}
+.nota.on{background:var(--grad);color:#1A1306;border-color:transparent;box-shadow:0 4px 18px rgba(212,165,55,.35)}
+.escala{display:flex;justify-content:space-between;font-size:.66rem;color:var(--muted);margin-top:6px;padding:0 2px}
+.puesto{margin-top:10px;text-align:center;font-family:var(--disp);font-size:1.05rem;letter-spacing:.5px;min-height:1.4em;color:var(--gold-l)}
+
+/* premios */
+.premios{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prem{padding:.55rem .6rem;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt2);font-size:.74rem;font-weight:700;text-align:left}
+.prem.on{border-color:var(--gold);color:var(--gold-l);background:rgba(212,165,55,.1)}
+
+/* audio */
+.rec{display:flex;flex-direction:column;align-items:center;gap:10px}
+.recbtn{width:86px;height:86px;border-radius:50%;border:3px solid var(--line2);background:var(--bg2);display:grid;place-items:center}
+.recbtn i{width:34px;height:34px;border-radius:50%;background:#E5484D;transition:.2s}
+.recbtn.on{border-color:#E5484D;animation:pulse 1.2s infinite}
+.recbtn.on i{border-radius:8px;width:28px;height:28px}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.5)}70%{box-shadow:0 0 0 16px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+.rtime{font-family:var(--disp);font-size:1.4rem}
+.rec audio{width:100%}
+.rnote{font-size:.72rem;color:var(--muted);text-align:center}
+
+/* barra inferior */
+.bottom{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(11,10,8,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.bottom .in{max-width:560px;margin:0 auto}
+.falta{font-size:.72rem;color:var(--warn);text-align:center;margin-bottom:6px;min-height:1em}
+
+.toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:#111;border:1px solid var(--gold-d);color:var(--txt);padding:.7rem 1rem;border-radius:12px;font-size:.85rem;font-weight:700;z-index:50;max-width:90vw;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.toast.ok{border-color:var(--ok)}.toast.bad{border-color:var(--err)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);display:grid;place-items:center;z-index:40}
+.overlay .box{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:22px;text-align:center;max-width:300px}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:sp 1s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <img src="logo.png" alt=""/>
+    <div>
+      <h1><span class="gold-text">Portal del Jurado</span></h1>
+      <p>CUP Dance Competition 2026 · Gran Asunción</p>
+    </div>
+    <div class="jchip hidden" id="jchip"><span>Jurado</span><b id="jnombre"></b><button onclick="cambiarJurado()">cambiar</button></div>
+  </div>
+
+  <!-- 1. Elegir jurado -->
+  <div class="card hidden" id="v-jurado">
+    <h2>¿Quién sos?</h2>
+    <p class="msg" style="text-align:left;padding:0 0 10px">Elegí tu perfil. Este celular queda guardado con tu nombre.</p>
+    <div class="jlist" id="jlist"><div class="msg">Cargando…</div></div>
+  </div>
+
+  <!-- 2. Buscar obra -->
+  <div class="card hidden" id="v-buscar">
+    <h2>Obra en escena</h2>
+    <div class="buscar">
+      <input id="q" type="number" inputmode="numeric" placeholder="N° de orden" onkeydown="if(event.key==='Enter')buscar()"/>
+      <button class="btn" onclick="buscar()">Abrir</button>
+    </div>
+    <div class="prog"><span id="prog-txt">0 / 0</span><span class="bar"><i id="prog-bar"></i></span><button class="btn-sm" onclick="cargarObras()" title="Traer el orden actualizado" style="margin-right:6px">🔄 Actualizar</button><button class="btn-sm" onclick="toggleLista()" id="btn-lista">Ver lista</button></div>
+    <div class="msg" id="act-txt" style="font-size:.68rem;padding:4px 0 0;text-align:right"></div>
+    <div class="olist hidden" id="olist"></div>
+  </div>
+
+  <!-- 3. Evaluación -->
+  <div id="v-obra" class="hidden" style="display:grid;gap:12px">
+    <div class="card">
+      <div class="obra-top">
+        <div class="obra-nro"><small>N°</small><span class="gold-text" id="o-nro"></span></div>
+        <div style="flex:1;min-width:0">
+          <div class="obra-tit" id="o-tit"></div>
+          <div class="tags" id="o-tags"></div>
+        </div>
+      </div>
+      <div class="parts" id="o-parts"></div>
+      <div class="ya hidden" id="o-ya"></div>
+      <div class="nav"><button class="btn-line" onclick="mover(-1)">‹ Anterior</button><button class="btn-line" onclick="mover(1)">Siguiente ›</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Puntaje de la obra</h2>
+      <div class="notas" id="n-obra"></div>
+      <div class="escala"><span>5–6 · 3er puesto</span><span>7–8 · 2do</span><span>9–10 · 1er</span></div>
+      <div class="puesto" id="p-obra"></div>
+    </div>
+
+    <div class="card hidden" id="c-coreo">
+      <h2>Puntaje de coreografía</h2>
+      <div class="notas" id="n-coreo"></div>
+      <div class="puesto" id="p-coreo"></div>
+    </div>
+
+    <div class="card">
+      <h2>Postular a premio especial <span style="color:var(--muted);font-size:.7rem;text-transform:none;letter-spacing:0">(opcional)</span></h2>
+      <div class="premios" id="premios"></div>
+    </div>
+
+    <div class="card">
+      <h2>Devolución en audio <span style="color:var(--err);font-size:.75rem">*</span></h2>
+      <div class="rec">
+        <button class="recbtn" id="recbtn" onclick="toggleRec()" aria-label="Grabar"><i></i></button>
+        <div class="rtime" id="rtime">0:00</div>
+        <audio id="rplay" controls class="hidden"></audio>
+        <div class="rnote" id="rnote">Tocá el botón rojo para grabar tu devolución. Tocá de nuevo para terminar.</div>
+        <button class="btn-sm hidden" id="rborrar" onclick="borrarAudio()">🗑 Borrar y grabar de nuevo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom hidden" id="bottom"><div class="in">
+  <div class="falta" id="falta"></div>
+  <button class="btn" id="btn-enviar" onclick="enviar()" disabled>Enviar calificación</button>
+</div></div>
+
+<script>
+/* ====== CONFIGURACIÓN ======
+   Pegá acá la URL /exec del Apps Script del JURADO (no la de inscripciones) */
+const JURADO_URL = 'https://script.google.com/macros/s/AKfycbzEzVg-Vj7TDHwG3441kbkd8UKIrRwnpdiTVGGKZQtQob3xv5gWs9Qc9N6T8Tmp9O274A/exec';
+
+const PREMIOS = ['Gran Copa','Mejor Bailarín/a','Bailarín/a Destacado/a','Revelación','Mejor Coreógrafo/a','Mejor Grupo','Mejor Academia','Mejor Intérprete','Mejor Vestuario','Mejor Dúo','Mejor Maestro Preparador (Danza Clásica)'];
+const LS_J = 'cdc_jurado', LS_DONE = 'cdc_jurado_hechas_';
+
+let jurado = null, jurados = [], obras = [], idx = -1;
+let st = { puntaje: null, coreo: null, premios: new Set(), audio: null, audioUrl: '' };
+let rec = null, chunks = [], t0 = 0, timer = null, stream = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function toast(t, cls) { const d = document.createElement('div'); d.className = 'toast ' + (cls || ''); d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 3200); }
+function cargando(on, t) {
+  let o = $('ovl');
+  if (!on) { if (o) o.remove(); return; }
+  if (!o) { o = document.createElement('div'); o.id = 'ovl'; o.className = 'overlay'; document.body.appendChild(o); }
+  o.innerHTML = '<div class="box"><div class="spin"></div>' + esc(t || 'Cargando…') + '</div>';
+}
+async function api(params) {
+  const r = await fetch(JURADO_URL + '?' + new URLSearchParams(params));
+  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Error'); return j;
+}
+async function apiPost(params) {
+  const r = await fetch(JURADO_URL, { method: 'POST', body: new URLSearchParams(params) });
+  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Error'); return j;
+}
+function hechas() { try { return new Set(JSON.parse(localStorage.getItem(LS_DONE + jurado.n) || '[]')); } catch (e) { return new Set(); } }
+function marcarHecha(id) { const s = hechas(); s.add(id); try { localStorage.setItem(LS_DONE + jurado.n, JSON.stringify([...s])); } catch (e) {} }
+
+/* ====== INICIO ====== */
+async function init() {
+  if (JURADO_URL.indexOf('PEGAR') === 0) { $('v-jurado').classList.remove('hidden'); $('jlist').innerHTML = '<div class="msg err">Falta configurar JURADO_URL en jurado.html</div>'; return; }
+  try { jurados = (await api({ action: 'jurados' })).jurados; }
+  catch (e) { jurados = [1, 2, 3, 4].map(n => ({ n, nombre: 'Jurado ' + n })); }
+  const pj = Number(new URLSearchParams(location.search).get('j'));
+  let guardado = null; try { guardado = JSON.parse(localStorage.getItem(LS_J) || 'null'); } catch (e) {}
+  if (pj && jurados.some(j => j.n === pj)) elegir(pj, true);
+  else if (guardado && jurados.some(j => j.n === guardado.n)) elegir(guardado.n, true);
+  else mostrarJurados();
+}
+function mostrarJurados() {
+  $('v-jurado').classList.remove('hidden');
+  ['v-buscar', 'v-obra', 'bottom', 'jchip'].forEach(i => $(i).classList.add('hidden'));
+  $('jlist').innerHTML = jurados.map(j => `<button class="jbtn" onclick="elegir(${j.n})"><span class="n">${j.n}</span>${esc(j.nombre)}</button>`).join('');
+}
+function cambiarJurado() {
+  if (!confirm('¿Cambiar de jurado en este celular?')) return;
+  try { localStorage.removeItem(LS_J); } catch (e) {}
+  history.replaceState(null, '', location.pathname);
+  jurado = null; mostrarJurados();
+}
+async function elegir(n, silencioso) {
+  jurado = jurados.find(j => j.n === n);
+  try { localStorage.setItem(LS_J, JSON.stringify(jurado)); } catch (e) {}
+  $('jnombre').textContent = jurado.nombre;
+  $('jchip').classList.remove('hidden');
+  $('v-jurado').classList.add('hidden');
+  $('v-buscar').classList.remove('hidden');
+  if (!silencioso) toast('Hola, ' + jurado.nombre, 'ok');
+  await cargarObras('inicio');
+}
+let autoAct = null;
+async function cargarObras(modo) {
+  const auto = modo === 'auto';
+  if (!auto) cargando(true, modo === 'inicio' ? 'Cargando obras…' : 'Actualizando orden…');
+  const actual = obras[idx] ? obras[idx].idInscripcion : null;
+  try {
+    const nuevas = (await api({ action: 'obrasJurado' })).obras;
+    const cambio = JSON.stringify(nuevas) !== JSON.stringify(obras);
+    obras = nuevas;
+    if (actual) {
+      const i = obras.findIndex(o => o.idInscripcion === actual);
+      if (i < 0) { idx = -1; $('v-obra').classList.add('hidden'); $('bottom').classList.add('hidden'); toast('La obra que tenías abierta ya no está en el orden', 'bad'); }
+      else {
+        idx = i; const o = obras[i];
+        $('o-nro').textContent = o.orden; $('q').value = o.orden; $('o-tit').textContent = o.obra || '(sin nombre)';
+        pintarDatos(o); validar();
+      }
+    }
+    pintarLista();
+    $('act-txt').textContent = 'Orden actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+    if (modo === 'inicio') $('q').focus();
+    else if (!auto) toast(cambio ? '✓ Orden actualizado' : '✓ El orden ya estaba al día', 'ok');
+    else if (cambio) toast('🔄 Se actualizó el orden de las obras', 'ok');
+  } catch (e) { if (modo === 'inicio') { obras = []; pintarLista(); } if (!auto) toast('No se pudieron cargar las obras: ' + e.message, 'bad'); }
+  cargando(false);
+  if (!autoAct) autoAct = setInterval(() => { if (!document.hidden && !(rec && rec.state === 'recording') && !$('ovl')) cargarObras('auto'); }, 3 * 60 * 1000);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && jurado && autoAct && !(rec && rec.state === 'recording')) cargarObras('auto'); });
+function pintarLista() {
+  const h = hechas();
+  $('prog-txt').textContent = h.size + ' / ' + obras.length + ' calificadas';
+  $('prog-bar').style.width = (obras.length ? h.size / obras.length * 100 : 0) + '%';
+  $('olist').innerHTML = obras.map((o, i) => `<button class="oitem ${h.has(o.idInscripcion) ? 'done' : ''}" onclick="abrir(${i})">
+    <span class="nro">${o.orden}</span><span class="t"><b>${esc(o.obra)}</b><small>${esc(o.modalidad)} · ${esc(o.categoria)} · ${esc(o.tipoParticipacion)}</small></span>
+    <span class="st">${h.has(o.idInscripcion) ? '✓' : ''}</span></button>`).join('') || '<div class="msg">No hay obras en el orden.</div>';
+}
+function toggleLista() { const l = $('olist'); l.classList.toggle('hidden'); $('btn-lista').textContent = l.classList.contains('hidden') ? 'Ver lista' : 'Ocultar'; }
+function buscar() {
+  const n = Number($('q').value);
+  const i = obras.findIndex(o => o.orden === n);
+  if (i < 0) { toast('No existe la obra N° ' + ($('q').value || '—'), 'bad'); return; }
+  abrir(i);
+}
+function mover(d) { const i = idx + d; if (i >= 0 && i < obras.length) abrir(i); }
+
+/* ====== OBRA ====== */
+async function abrir(i) {
+  if (rec && rec.state === 'recording') { toast('Terminá la grabación primero', 'bad'); return; }
+  idx = i; const o = obras[i];
+  st = { puntaje: null, coreo: null, premios: new Set(), audio: null, audioUrl: '' };
+  borrarAudio(true);
+  $('olist').classList.add('hidden'); $('btn-lista').textContent = 'Ver lista';
+  $('q').value = o.orden;
+  $('o-nro').textContent = o.orden;
+  $('o-tit').textContent = o.obra || '(sin nombre)';
+  pintarDatos(o);
+  $('o-ya').classList.add('hidden');
+  $('v-obra').classList.remove('hidden'); $('bottom').classList.remove('hidden');
+  pintarNotas(); pintarPremios(); validar();
+  $('v-obra').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  cargarPrevia(i, o);
+}
+function pintarDatos(o) {
+  $('o-tags').innerHTML = [o.modalidad, o.categoria, o.tipoParticipacion, o.duracion, o.turno ? 'Turno ' + o.turno : ''].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+    + (o.competeCoreografia === 'Sí' ? '<span class="tag g">★ Compite coreografía</span>' : '');
+  $('o-parts').innerHTML = o.participantes && o.participantes.length ? '<b>' + (o.participantes.length > 1 ? 'Intérpretes' : 'Intérprete') + ':</b> ' + esc(o.participantes.join(', ')) : '';
+  $('c-coreo').classList.toggle('hidden', o.competeCoreografia !== 'Sí');
+}
+async function cargarPrevia(i, o) {
+  // ¿ya la calificó?
+  try {
+    const c = await api({ action: 'cargarCalificacion', jurado: jurado.n, idInscripcion: o.idInscripcion });
+    if (idx !== i || !c.encontrado) return;
+    st.puntaje = Number(c.puntaje) || null; st.coreo = Number(c.puntajeCoreo) || null;
+    st.premios = new Set(c.premios || []); st.audioUrl = c.audioUrl || '';
+    marcarHecha(o.idInscripcion); pintarLista();
+    $('o-ya').innerHTML = '✓ Ya calificaste esta obra. Podés corregir y volver a enviar' + (st.audioUrl ? ' (si no grabás de nuevo, se mantiene tu audio anterior).' : '.');
+    $('o-ya').classList.remove('hidden');
+    pintarNotas(); pintarPremios(); validar();
+  } catch (e) {}
+}
+function puesto(n) { return !n ? '' : n >= 9 ? '🥇 1er puesto' : n >= 7 ? '🥈 2do puesto' : '🥉 3er puesto'; }
+function pintarNotas() {
+  const b = (k, el) => { $(el).innerHTML = [5, 6, 7, 8, 9, 10].map(n => `<button class="nota ${st[k] === n ? 'on' : ''}" onclick="nota('${k}',${n})">${n}</button>`).join(''); };
+  b('puntaje', 'n-obra'); b('coreo', 'n-coreo');
+  $('p-obra').textContent = puesto(st.puntaje); $('p-coreo').textContent = puesto(st.coreo);
+}
+function nota(k, n) { st[k] = n; pintarNotas(); validar(); }
+function pintarPremios() { $('premios').innerHTML = PREMIOS.map((p, i) => `<button class="prem ${st.premios.has(p) ? 'on' : ''}" onclick="premio(${i})">${st.premios.has(p) ? '★ ' : ''}${esc(p)}</button>`).join(''); }
+function premio(i) { const p = PREMIOS[i]; st.premios.has(p) ? st.premios.delete(p) : st.premios.add(p); pintarPremios(); }
+function validar() {
+  const o = obras[idx]; const f = [];
+  if (!o) return;
+  if (!st.puntaje) f.push('puntaje');
+  if (o.competeCoreografia === 'Sí' && !st.coreo) f.push('puntaje de coreografía');
+  if (!st.audio && !st.audioUrl) f.push('audio');
+  if (rec && rec.state === 'recording') f.push('terminar la grabación');
+  $('falta').textContent = f.length ? 'Falta: ' + f.join(', ') : '';
+  $('btn-enviar').disabled = f.length > 0;
+  $('btn-enviar').textContent = st.audioUrl && !st.audio ? 'Actualizar calificación' : 'Enviar calificación';
+}
+
+/* ====== AUDIO ====== */
+async function toggleRec() {
+  if (rec && rec.state === 'recording') { rec.stop(); return; }
+  if (st.audio && !confirm('¿Reemplazar la grabación?')) return;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch (e) { toast('Permití el micrófono para grabar', 'bad'); return; }
+  chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  rec.onstop = async () => {
+    clearInterval(timer); stream.getTracks().forEach(t => t.stop());
+    $('recbtn').classList.remove('on');
+    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+    $('rnote').textContent = 'Preparando audio…';
+    try { st.audio = await aMp3(blob); }
+    catch (e) { st.audio = null; toast('No se pudo procesar el audio, grabá de nuevo', 'bad'); }
+    if (st.audio) {
+      $('rplay').src = URL.createObjectURL(st.audio); $('rplay').classList.remove('hidden');
+      $('rborrar').classList.remove('hidden');
+      $('rnote').textContent = 'Escuchalo si querés. Listo para enviar.';
+    }
+    validar();
+  };
+  rec.start(1000); t0 = Date.now();
+  $('recbtn').classList.add('on'); $('rnote').textContent = 'Grabando… tocá para terminar.';
+  timer = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $('rtime').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 300);
+  validar();
+}
+function borrarAudio(silencioso) {
+  st.audio = null; $('rplay').removeAttribute('src'); $('rplay').classList.add('hidden'); $('rborrar').classList.add('hidden');
+  $('rtime').textContent = '0:00'; $('rnote').textContent = 'Tocá el botón rojo para grabar tu devolución. Tocá de nuevo para terminar.';
+  if (!silencioso) validar();
+}
+async function aMp3(blob) {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const buf = await new Promise((ok, ko) => blob.arrayBuffer().then(ab => ctx.decodeAudioData(ab, ok, ko)));
+  const rate = 22050;
+  const off = new OfflineAudioContext(1, Math.ceil(buf.duration * rate), rate);
+  const src = off.createBufferSource(); src.buffer = buf; src.connect(off.destination); src.start();
+  const mono = (await off.startRendering()).getChannelData(0);
+  try { ctx.close(); } catch (e) {}
+  const pcm = new Int16Array(mono.length);
+  for (let i = 0; i < mono.length; i++) { const s = Math.max(-1, Math.min(1, mono[i])); pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF; }
+  const enc = new lamejs.Mp3Encoder(1, rate, 64), out = [];
+  for (let i = 0; i < pcm.length; i += 1152) { const b = enc.encodeBuffer(pcm.subarray(i, i + 1152)); if (b.length) out.push(new Int8Array(b)); }
+  const f = enc.flush(); if (f.length) out.push(new Int8Array(f));
+  return new Blob(out, { type: 'audio/mpeg' });
+}
+function b64(blob) { return new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.readAsDataURL(blob); }); }
+
+/* ====== ENVIAR ====== */
+async function enviar() {
+  const o = obras[idx]; if (!o) return;
+  $('btn-enviar').disabled = true;
+  cargando(true, 'Enviando calificación…');
+  try {
+    const p = { action: 'guardarCalificacion', jurado: jurado.n, idInscripcion: o.idInscripcion, ordenNro: o.orden, nombreObra: o.obra,
+      puntaje: st.puntaje, puntajeCoreo: o.competeCoreografia === 'Sí' ? (st.coreo || '') : '', premios: [...st.premios].join('|') };
+    if (st.audio) p.audioBase64 = await b64(st.audio);
+    let r, err;
+    for (let k = 0; k < 3; k++) { try { r = await apiPost(p); break; } catch (e) { err = e; if (/puntaje|audio|Jurado inválido|Falta/.test(e.message)) break; await new Promise(s => setTimeout(s, 1500)); } }
+    if (!r) throw err;
+    marcarHecha(o.idInscripcion); pintarLista();
+    cargando(false);
+    toast('✓ Obra N° ' + o.orden + ' enviada', 'ok');
+    if (idx + 1 < obras.length) abrir(idx + 1);
+    else { $('v-obra').classList.add('hidden'); $('bottom').classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('¡Terminaste todas las obras!', 'ok'); }
+  } catch (e) {
+    cargando(false); toast('No se envió: ' + e.message + '. Probá de nuevo.', 'bad'); validar();
+  }
+}
+init();
+</script>
+</body>
+</html>
