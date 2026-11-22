@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
-<script src="../devolucion-pdf.js?v=2"></script>
+<script src="../devolucion-pdf.js?v=4"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -268,13 +268,17 @@ tr:hover td{background:rgba(212,165,55,.04)}
           <div class="muted" style="margin-top:6px">Portal de devoluciones: <a href="../devoluciones.html" target="_blank" id="link-portal">devoluciones.html</a> · En vivo: <a href="../en-vivo.html" target="_blank">en-vivo.html</a></div>
         </div>
         <div class="card">
-          <h2>📄 PDF de devolución</h2>
-          <div class="muted" style="margin-bottom:10px">El PDF se arma solo con las calificaciones del momento: cada academia lo descarga desde el portal. Acá podés revisarlos o bajarlos todos juntos.</div>
+          <h2>📄 PDF de devolución <span class="der"><a class="btn-line" id="link-carpeta-pdf" href="#" target="_blank" rel="noopener" style="display:none">📂 Carpeta en Drive</a></span></h2>
+          <div class="muted" style="margin-bottom:10px">Los PDF se guardan en Drive (una carpeta por academia) y aparecen en el Portal de devoluciones. Si cambian notas después, tocá “Regenerar” para actualizarlos.</div>
           <div style="display:grid;gap:8px">
+            <div id="pdf-estado" style="font-weight:700"></div>
             <select id="pdf-acad"><option value="">Todas las academias</option></select>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn" onclick="pdfDevolucionesLote()">⬇ Descargar PDF (todas las obras del filtro)</button>
-              <input type="number" id="pdf-n" placeholder="N°" style="width:90px"/><button class="btn-line" onclick="pdfUna()">PDF de una obra</button>
+              <button class="btn" id="btn-pdf-faltan" onclick="guardarPdfs(false)">📁 Guardar en Drive los que faltan</button>
+              <button class="btn-line" id="btn-pdf-todos" onclick="guardarPdfs(true)">🔄 Regenerar todos</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <input type="number" id="pdf-n" placeholder="N°" style="width:90px"/><button class="btn-line" onclick="pdfUna()">👁 Ver PDF de una obra</button>
             </div>
             <div class="muted" id="pdf-prog"></div>
           </div>
@@ -307,7 +311,8 @@ function sg(k) { try { return sessionStorage.getItem(k); } catch (e) { return nu
 function ss(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
 
 async function post(params) {
-  const r = await fetch(JURADO_URL, { method: 'POST', body: new URLSearchParams(Object.assign({ clave: CLAVE }, params)) });
+  const fd = new FormData(), all = Object.assign({ clave: CLAVE }, params); Object.keys(all).forEach(k => fd.append(k, all[k]));
+  const r = await fetch(JURADO_URL, { method: 'POST', body: fd });
   const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Error'); return j;
 }
 
@@ -654,6 +659,8 @@ function pintarDev() {
   const sel = $('pdf-acad'), v = sel.value;
   const acs = [...new Set(D.obras.map(o => o.academia).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   sel.innerHTML = '<option value="">Todas las academias</option>' + acs.map(a => `<option ${a === v ? 'selected' : ''}>${esc(a)}</option>`).join('');
+  sel.onchange = pintarEstadoPdf;
+  pintarEstadoPdf();
   pintarAccesos();
 }
 async function togConfig(k) {
@@ -666,20 +673,48 @@ async function togConfig(k) {
 function obraPdf(o) { return Object.assign({}, o, { resultados: o.resultados.map(r => ({ jurado: r.jurado, puntaje: r.puntaje, puesto: r.puesto, coreo: r.coreo, puestoCoreo: r.puestoCoreo })) }); }
 async function pdfUna() {
   const o = obraPorN($('pdf-n').value); if (!o) { toast('No existe esa obra', 'bad'); return; }
-  const doc = await CDCPDF.devolucion(obraPdf(o), { logo: '../logo.png' }); doc.save(CDCPDF.nombreArchivo(o));
+  const doc = await CDCPDF.devolucion(obraPdf(o), { logo: '../logo.png' });
+  window.open(doc.output('bloburl'), '_blank');
 }
-async function pdfDevolucionesLote() {
+let guardandoPdfs = false;
+/** Arma cada PDF en el navegador y lo sube a Drive (3 a la vez). Solo obras que ya tienen notas. */
+async function guardarPdfs(todos) {
+  if (guardandoPdfs) return;
   const a = $('pdf-acad').value;
-  const obras = D.obras.filter(o => !a || o.academia === a);
-  if (!obras.length) return;
-  let doc = null;
-  for (let i = 0; i < obras.length; i++) {
-    $('pdf-prog').textContent = 'Armando ' + (i + 1) + ' de ' + obras.length + '…';
-    doc = await CDCPDF.devolucion(obraPdf(obras[i]), { logo: '../logo.png', doc });
-    if (i % 10 === 9) await new Promise(r => setTimeout(r, 0));
+  const lista = D.obras.filter(o => (!a || o.academia === a) && o.promedio != null && (todos || !(D.pdfs || {})[o.idInscripcion]));
+  if (!lista.length) { toast(todos ? 'No hay obras con notas para generar' : 'No falta ningún PDF ✓', 'ok'); return; }
+  if (todos && !confirm('¿Regenerar ' + lista.length + ' PDF? Reemplaza los que ya estaban en Drive.')) return;
+  guardandoPdfs = true; ['btn-pdf-faltan', 'btn-pdf-todos'].forEach(i => $(i).disabled = true);
+  let hechos = 0, errores = [];
+  const cola = lista.slice();
+  const prog = () => $('pdf-prog').textContent = '⏳ Guardando en Drive: ' + hechos + ' de ' + lista.length + (errores.length ? ' · ⚠️ ' + errores.length + ' con error' : '') + ' — no cierres esta página';
+  prog();
+  async function trabajador() {
+    while (cola.length) {
+      const o = cola.shift();
+      let ok = false;
+      for (let intento = 0; intento < 3 && !ok; intento++) {
+        try {
+          const doc = await CDCPDF.devolucion(obraPdf(o), { logo: '../logo.png' });
+          const r = await post({ action: 'adminGuardarPdf', id: o.idInscripcion, nro: o.orden, obra: o.obra, academia: o.academia, pdfBase64: CDCPDF.base64(doc) });
+          D.pdfs = D.pdfs || {}; D.pdfs[o.idInscripcion] = { url: r.url, fecha: r.fecha };
+          ok = true;
+        } catch (e) { if (intento === 2) errores.push(o.orden); else await new Promise(s => setTimeout(s, 2000)); }
+      }
+      hechos++; prog(); pintarEstadoPdf();
+    }
   }
-  doc.save('Devoluciones CDC 2026' + (a ? ' - ' + a.replace(/[\\/:*?"<>|]/g, '') : '') + '.pdf');
-  $('pdf-prog').textContent = '✓ Listo (' + obras.length + ' obras)';
+  await Promise.all([trabajador(), trabajador(), trabajador()]);
+  guardandoPdfs = false; ['btn-pdf-faltan', 'btn-pdf-todos'].forEach(i => $(i).disabled = false);
+  $('pdf-prog').textContent = errores.length ? '⚠️ Listo, pero fallaron los N° ' + errores.join(', ') + '. Tocá “Guardar los que faltan” para reintentar.' : '✓ Listo: ' + lista.length + ' PDF guardados en Drive y visibles en el portal.';
+  toast(errores.length ? 'Terminó con errores' : '✓ PDF guardados', errores.length ? 'bad' : 'ok');
+}
+function pintarEstadoPdf() {
+  const a = $('pdf-acad').value, pd = D.pdfs || {};
+  const conNota = D.obras.filter(o => (!a || o.academia === a) && o.promedio != null);
+  const conPdf = conNota.filter(o => pd[o.idInscripcion]).length;
+  $('pdf-estado').innerHTML = `📁 ${conPdf} de ${conNota.length} obras calificadas tienen su PDF en Drive${conNota.length - conPdf ? ` · <span style="color:var(--warn)">faltan ${conNota.length - conPdf}</span>` : ' ✓'}`;
+  if (D.carpetaPdf) { $('link-carpeta-pdf').href = D.carpetaPdf; $('link-carpeta-pdf').style.display = ''; }
 }
 function telWa(t) { let d = String(t || '').replace(/\D/g, ''); if (!d) return ''; if (d.startsWith('595')) return d; if (d.startsWith('0')) d = d.slice(1); return '595' + d; }
 function pintarAccesos() {
@@ -698,7 +733,7 @@ function pintarAccesos() {
         <button class="btn-sm" onclick="pdfAcademia(${ix})">PDF</button></td></tr>`; }).join('')}</table>`;
 }
 function copiar(t) { navigator.clipboard.writeText(t).then(() => toast('Copiado', 'ok')); }
-function pdfAcademia(i) { const a = D.accesos[i].academia; const op = [...$('pdf-acad').options].find(x => clave(x.value) === clave(a)); if (!op) { toast('Esa academia no tiene obras', 'bad'); return; } $('pdf-acad').value = op.value; pdfDevolucionesLote(); }
+function pdfAcademia(i) { const a = D.accesos[i].academia; const op = [...$('pdf-acad').options].find(x => clave(x.value) === clave(a)); if (!op) { toast('Esa academia no tiene obras', 'bad'); return; } $('pdf-acad').value = op.value; pintarEstadoPdf(); guardarPdfs(false); }
 async function cambiarPin(i) {
   const a = D.accesos[i].academia;
   const pin = prompt('Nuevo PIN para ' + a + ' (4 a 10 letras o números):'); if (!pin) return;
