@@ -244,7 +244,7 @@ tr:hover td{background:rgba(212,165,55,.04)}
           <div class="card">
             <h2>✏️ Registrar ganador a mano</h2>
             <div style="display:grid;gap:8px">
-              <select id="m-premio"></select>
+              <input type="text" id="m-premio" list="lista-premios" placeholder="Premio (elegí de la lista o escribí uno nuevo)"/><datalist id="lista-premios"></datalist>
               <input type="number" id="m-nro" placeholder="N° de obra (opcional)"/>
               <input type="text" id="m-ganador" placeholder="Nombre del ganador/a (bailarín, coreógrafo, academia…)"/>
               <input type="text" id="m-notas" placeholder="Notas (opcional)"/>
@@ -437,7 +437,7 @@ function pintarDash() {
     ${Object.entries(tp).sort((a, b) => b[1].c - a[1].c).map(([t, v]) => `<tr><td>${esc(t)}</td><td class="c">${v.c}</td><td class="c">${v[1]}</td><td class="c">${v[2]}</td><td class="c">${v[3]}</td></tr>`).join('')}</table></div>`;
 
   $('tab-gan-dash').innerHTML = D.ganadores.length ? `<div class="tw"><table><tr><th>Premio</th><th>N°</th><th>Obra</th><th>Academia</th><th>Ganador/a</th></tr>
-    ${D.ganadores.map(g => `<tr><td><b style="color:var(--gold-l)">${esc(g.premio)}</b></td><td>${esc(g.nro)}</td><td>${esc(g.obra)}</td><td>${esc(g.academia)}</td><td>${esc(g.ganador)}</td></tr>`).join('')}</table></div>` : '<div class="msg">Todavía no se registraron ganadores.</div>';
+    ${D.ganadores.map(g => `<tr><td><b style="color:var(--gold-l)">${esc(g.premio)}</b></td><td>${esc(g.nro)}</td><td>${esSolistaG(g) ? '<span class="muted">Solista</span>' : esc(g.obra)}</td><td>${esc(g.academia)}</td><td>${esc(g.ganador)}</td></tr>`).join('')}</table></div>` : '<div class="msg">Todavía no se registraron ganadores.</div>';
 
   const solo = $('solo-falta').checked;
   const filas = obras.filter(o => !solo || o.votos < nJ || o.resultados.some(r => !r.audioUrl));
@@ -570,31 +570,33 @@ function pintarFaltantes() {
 
 /* ====== PREMIOS ====== */
 function pintarPremios() {
-  const sel = $('m-premio'); if (!sel.options.length) sel.innerHTML = PREMIOS.map(p => `<option>${esc(p)}</option>`).join('');
+  const dl = $('lista-premios'); if (!dl.options.length) dl.innerHTML = PREMIOS.map(p => `<option value="${esc(p)}">`).join('');
   $('pre-post').innerHTML = PREMIOS.map((p, i) => {
     const lista = D.obras.map(o => ({ o, v: o.resultados.filter(r => (r.premios || []).includes(p)).length })).filter(x => x.v).sort((a, b) => b.v - a.v || (b.o.promedio || 0) - (a.o.promedio || 0));
     const gan = D.ganadores.filter(g => g.premio === p);
     return `<details class="pgrp" ${lista.length ? 'open' : ''}><summary>${esc(p)} <span class="cnt">(${lista.length} postulada${lista.length === 1 ? '' : 's'})</span>${gan.length ? `<span class="gano">✓ ${gan.length} ganador${gan.length > 1 ? 'es' : ''}</span>` : ''}</summary>
-      <div class="in">${lista.length ? `<table><tr><th class="c">Votos</th><th>N°</th><th>Obra</th><th>Academia</th><th>Prom.</th><th></th></tr>
-        ${lista.map(x => `<tr><td class="c"><b style="color:var(--gold-l)">${x.v}</b></td><td>${x.o.orden}</td><td>${esc(x.o.obra)}<br><span class="muted">${esc(x.o.tipoParticipacion)} · ${esc(partsTxt(x.o)).slice(0, 80)}</span></td><td>${esc(x.o.academia)}</td><td>${x.o.promedio != null ? nota(x.o.promedio) : '—'}</td>
+      <div class="in">${lista.length ? `<table><tr><th class="c">Votos</th><th>N°</th><th>Bailarín/a u obra</th><th>Academia</th><th>Prom.</th><th></th></tr>
+        ${lista.map(x => `<tr><td class="c"><b style="color:var(--gold-l)">${x.v}</b></td><td>${x.o.orden}</td><td>${esSolista(x.o) ? `<b>${esc(partsTxt(x.o))}</b><br><span class="muted">Solista</span>` : `${esc(x.o.obra)}<br><span class="muted">${esc(x.o.tipoParticipacion)} · ${esc(partsTxt(x.o)).slice(0, 80)}</span>`}</td><td>${esc(x.o.academia)}</td><td>${x.o.promedio != null ? nota(x.o.promedio) : '—'}</td>
           <td><button class="btn-sm verde" onclick="modalGanador(${i},${x.o.orden})">🏆 Ganador</button></td></tr>`).join('')}</table>` : '<div class="muted">Ningún jurado postuló obras a este premio.</div>'}</div></details>`;
   }).join('');
-  $('pre-gan').innerHTML = D.ganadores.length ? D.ganadores.map((g, i) => `<div class="sw"><div><b style="color:var(--gold-l)">${esc(g.premio)}</b><small>${esc(g.ganador || '(sin nombre)')}${g.obra ? ' · N° ' + esc(g.nro) + ' ' + esc(g.obra) : ''}${g.academia ? ' · ' + esc(g.academia) : ''}</small></div>
-    <div style="display:flex;gap:6px"><button class="btn-sm" onclick="modalCert(${i})">🎓 Certificado</button><button class="btn-sm rojo" onclick="borrarGanador(${i})">🗑</button></div></div>`).join('') : '<div class="msg">Todavía no hay ganadores.</div>';
+  $('pre-gan').innerHTML = D.ganadores.length ? D.ganadores.map((g, i) => `<div class="sw"><div><b style="color:var(--gold-l)">${esc(g.premio)}</b><small>${esc(g.ganador || '(sin nombre)')} · ${esc(detalleGanador(g))}</small></div>
+    <div style="display:flex;gap:6px"><button class="btn-sm" onclick="modalEditarGanador(${i})">✏️ Editar</button><button class="btn-sm" onclick="modalCert(${i})">🎓 Certificado</button><button class="btn-sm rojo" onclick="borrarGanador(${i})">🗑</button></div></div>`).join('') : '<div class="msg">Todavía no hay ganadores.</div>';
 }
 function modal(html) { cerrarModal(); const m = document.createElement('div'); m.className = 'modal'; m.id = 'modal'; m.innerHTML = '<div class="box">' + html + '</div>'; m.onclick = e => { if (e.target === m) cerrarModal(); }; document.body.appendChild(m); }
 function cerrarModal() { const m = $('modal'); if (m) m.remove(); }
 function modalGanador(i, n) {
   const o = obraPorN(n), parts = o.participantes || [];
   const sugerido = parts.length === 1 ? parts[0] : /Coreó/.test(PREMIOS[i]) ? (o.coreografo || '') : /Academia/.test(PREMIOS[i]) ? o.academia : /Maestro/.test(PREMIOS[i]) ? (o.maestro || '') : /Grupo|Dúo/.test(PREMIOS[i]) ? o.obra + ' — ' + o.academia : '';
-  modal(`<h3>🏆 ${esc(PREMIOS[i])}</h3><div class="muted">N° ${o.orden} · ${esc(o.obra)} · ${esc(o.academia)}</div>
+  modal(`<h3>🏆 Registrar ganador</h3><div class="muted">N° ${o.orden} · ${esSolista(o) ? esc(partsTxt(o)) + ' (solista)' : esc(o.obra)} · ${esc(o.academia)}</div>
+    <label>Nombre del premio especial</label><input type="text" id="g-premio" value="${esc(PREMIOS[i])}"/>
     <label>Nombre que va en el certificado</label>
     ${parts.length > 1 ? `<select onchange="$('g-nom').value=this.value"><option value="">— Elegir intérprete —</option>${parts.map(p => `<option>${esc(p)}</option>`).join('')}</select>` : ''}
     <input type="text" id="g-nom" value="${esc(sugerido)}"/>
     <label>Notas (opcional)</label><input type="text" id="g-notas"/>
-    <div class="acc"><button class="btn-line" onclick="cerrarModal()">Cancelar</button><button class="btn" onclick="registrarGanador('${esc(PREMIOS[i])}',${o.orden})">Registrar</button></div>`);
+    <div class="acc"><button class="btn-line" onclick="cerrarModal()">Cancelar</button><button class="btn" onclick="registrarGanador($('g-premio').value.trim(),${o.orden})">Registrar</button></div>`);
 }
 async function registrarGanador(premio, n) {
+  if (!premio) { toast('Escribí el nombre del premio', 'bad'); return; }
   const o = n ? obraPorN(n) : null;
   const ganador = (($('g-nom') || {}).value || '').trim(); if (!ganador) { toast('Escribí el nombre', 'bad'); return; }
   try {
@@ -603,7 +605,8 @@ async function registrarGanador(premio, n) {
   } catch (e) { toast('Error: ' + e.message, 'bad'); }
 }
 async function ganadorManual() {
-  const premio = $('m-premio').value, n = $('m-nro').value, ganador = $('m-ganador').value.trim();
+  const premio = $('m-premio').value.trim(), n = $('m-nro').value, ganador = $('m-ganador').value.trim();
+  if (!premio) { toast('Escribí el nombre del premio', 'bad'); return; }
   const o = n ? obraPorN(n) : null;
   if (n && !o) { toast('No existe la obra N° ' + n, 'bad'); return; }
   if (!ganador) { toast('Escribí el nombre del ganador', 'bad'); return; }
@@ -616,7 +619,28 @@ async function borrarGanador(i) {
   const g = D.ganadores[i]; if (!confirm('¿Borrar ' + g.premio + ' — ' + g.ganador + '?')) return;
   try { await post({ action: 'adminBorrarGanador', fila: g.fila, premio: g.premio }); toast('Borrado', 'ok'); await cargar(); } catch (e) { toast('Error: ' + e.message, 'bad'); }
 }
-function detalleGanador(g) { return g.obra ? 'Obra N° ' + g.nro + ' “' + g.obra + '”' + (g.academia ? ' — ' + g.academia : '') : (g.academia || ''); }
+function esSolistaG(g) { const o = g.id ? D.obras.find(x => x.idInscripcion === g.id) : null; return !!(o && esSolista(o)); }
+function esSolista(o) { return /^solista/i.test(String(o && o.tipoParticipacion || '')); }
+/** Línea chica del certificado: en solistas solo la academia; en grupos, la obra y la academia. */
+function detalleGanador(g) {
+  const o = g.id ? D.obras.find(x => x.idInscripcion === g.id) : null;
+  if (o && esSolista(o)) return g.academia || o.academia || '';
+  return g.obra ? 'Obra N° ' + g.nro + ' “' + g.obra + '”' + (g.academia ? ' — ' + g.academia : '') : (g.academia || '');
+}
+function modalEditarGanador(i) {
+  const g = D.ganadores[i];
+  modal(`<h3>✏️ Editar ganador</h3><div class="muted">${esc(detalleGanador(g))}</div>
+    <label>Nombre del premio especial</label><input type="text" id="e-premio" value="${esc(g.premio)}"/>
+    <label>Nombre del ganador/a</label><input type="text" id="e-nom" value="${esc(g.ganador)}"/>
+    <label>Notas</label><input type="text" id="e-notas" value="${esc(g.notas || '')}"/>
+    <div class="acc"><button class="btn-line" onclick="cerrarModal()">Cancelar</button><button class="btn" onclick="guardarEdicionGanador(${i})">Guardar</button></div>`);
+}
+async function guardarEdicionGanador(i) {
+  const g = D.ganadores[i], premio = $('e-premio').value.trim();
+  if (!premio) { toast('Escribí el nombre del premio', 'bad'); return; }
+  try { await post({ action: 'adminEditarGanador', fila: g.fila, premioAnterior: g.premio, premio, ganador: $('e-nom').value.trim(), notas: $('e-notas').value.trim() }); cerrarModal(); toast('✓ Guardado', 'ok'); await cargar(); }
+  catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
 function modalCert(i) {
   const g = D.ganadores[i];
   modal(`<h3>🎓 Certificado</h3>
@@ -642,7 +666,7 @@ function pdfGanadores() {
   const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   doc.setFillColor(17, 17, 17); doc.rect(0, 0, 210, 20, 'F'); doc.setTextColor(212, 165, 55); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
   doc.text('CUP DANCE COMPETITION 2026 — Premios especiales', 10, 12.5);
-  doc.autoTable({ startY: 26, head: [['Premio', 'Ganador/a', 'N°', 'Obra', 'Academia']], body: D.ganadores.map(g => [g.premio, g.ganador, g.nro, g.obra, g.academia]),
+  doc.autoTable({ startY: 26, head: [['Premio', 'Ganador/a', 'N°', 'Obra', 'Academia']], body: D.ganadores.map(g => [g.premio, g.ganador, g.nro, esSolistaG(g) ? 'Solista' : g.obra, g.academia]),
     styles: { fontSize: 9 }, headStyles: { fillColor: [17, 17, 17], textColor: [212, 165, 55] }, alternateRowStyles: { fillColor: [251, 246, 233] } });
   doc.save('Ganadores premios especiales CDC 2026.pdf');
 }
