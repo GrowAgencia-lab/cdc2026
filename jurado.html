@@ -228,8 +228,14 @@ async function api(params) {
   const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Error'); return j;
 }
 async function apiPost(params) {
-  const r = await fetch(JURADO_URL, { method: 'POST', body: new URLSearchParams(params) });
-  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Error'); return j;
+  const fd = new FormData(); Object.keys(params).forEach(k => fd.append(k, params[k]));
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 60000);
+  let r;
+  try { r = await fetch(JURADO_URL, { method: 'POST', body: fd, signal: ctl.signal }); }
+  catch (e) { const t = new TypeError(e.name === 'AbortError' ? 'Tiempo agotado' : e.message); throw t; }
+  finally { clearTimeout(to); }
+  let j; try { j = await r.json(); } catch (e) { const t = new TypeError('Respuesta inválida del servidor'); throw t; }
+  if (!j.ok) throw new Error(j.error || 'Error'); return j;
 }
 function hechas() { try { return new Set(JSON.parse(localStorage.getItem(LS_DONE + jurado.n) || '[]')); } catch (e) { return new Set(); } }
 function marcarHecha(id) { const s = hechas(); s.add(id); try { localStorage.setItem(LS_DONE + jurado.n, JSON.stringify([...s])); } catch (e) {} }
@@ -265,6 +271,7 @@ async function elegir(n, silencioso) {
   $('v-buscar').classList.remove('hidden');
   if (!silencioso) toast('Hola, ' + jurado.nombre, 'ok');
   await cargarObras('inicio');
+  refrescarPend(); procesarCola();
 }
 let autoAct = null;
 async function cargarObras(modo) {
@@ -300,7 +307,7 @@ function pintarLista() {
   $('prog-bar').style.width = (obras.length ? h.size / obras.length * 100 : 0) + '%';
   $('olist').innerHTML = obras.map((o, i) => `<button class="oitem ${h.has(o.idInscripcion) ? 'done' : ''}" onclick="abrir(${i})">
     <span class="nro">${o.orden}</span><span class="t"><b>${esc(o.obra)}</b><small>${esc(o.modalidad)} · ${esc(o.categoria)} · ${esc(o.tipoParticipacion)}</small></span>
-    <span class="st">${h.has(o.idInscripcion) ? '✓' : ''}</span></button>`).join('') || '<div class="msg">No hay obras en el orden.</div>';
+    <span class="st">${pendientes.some(x => x.p.idInscripcion === o.idInscripcion) ? '⏳' : h.has(o.idInscripcion) ? '✓' : ''}</span></button>`).join('') || '<div class="msg">No hay obras en el orden.</div>';
 }
 function toggleLista() { const l = $('olist'); l.classList.toggle('hidden'); $('btn-lista').textContent = l.classList.contains('hidden') ? 'Ver lista' : 'Ocultar'; }
 function buscar() {
@@ -419,25 +426,74 @@ async function aMp3(blob) {
 function b64(blob) { return new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.readAsDataURL(blob); }); }
 
 /* ====== ENVIAR ====== */
+/* ====== COLA SIN CONEXIÓN ======
+   Si el envío falla por conexión, la calificación (con su audio) queda guardada
+   en el celular y se reenvía sola cada 20 segundos hasta que llegue. */
+const DBN = 'cdc_jurado_cola';
+function db() { return new Promise((ok, ko) => { const r = indexedDB.open(DBN, 1); r.onupgradeneeded = () => r.result.createObjectStore('cola', { keyPath: 'k' }); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); }); }
+async function colaOp(modo, fn) { const d = await db(); return new Promise((ok, ko) => { const t = d.transaction('cola', modo); const st = t.objectStore('cola'); const r = fn(st); t.oncomplete = () => ok(r && r.result); t.onerror = () => ko(t.error); }); }
+const colaPut = it => colaOp('readwrite', st => st.put(it));
+const colaDel = k => colaOp('readwrite', st => st.delete(k));
+const colaAll = () => colaOp('readonly', st => st.getAll());
+// Errores pasajeros (sin conexión, servidor ocupado, tiempo agotado): se reintenta solo
+const reintentable = e => e.name === 'TypeError' || /tiempo|timeout|timed out|lock|bloqueo|ocupad|Service|servicio|Exceeded|excedi|Too many|demasiad/i.test(e.message || '');
+let pendientes = [], enviandoCola = false;
+async function refrescarPend() {
+  try { pendientes = jurado ? (await colaAll()).filter(x => x.p.jurado == jurado.n) : []; } catch (e) { pendientes = []; }
+  let el = $('pend');
+  if (!el) { el = document.createElement('div'); el.id = 'pend'; el.style.cssText = 'margin-top:8px;font-size:.78rem;color:var(--warn);display:flex;gap:8px;align-items:center;justify-content:space-between'; $('v-buscar').appendChild(el); }
+  el.innerHTML = pendientes.length ? `<span>⏳ ${pendientes.length} sin enviar (N° ${pendientes.map(x => x.p.ordenNro).join(', ')}) — se reenvían solas</span><button class="btn-sm" onclick="procesarCola(true)">Reintentar ya</button>` : '';
+  pintarLista();
+}
+async function procesarCola(manual) {
+  if (enviandoCola) return; enviandoCola = true;
+  let ok = 0;
+  try {
+    const items = jurado ? (await colaAll()).filter(x => x.p.jurado == jurado.n) : [];
+    for (const it of items) {
+      try { await apiPost(it.p); await colaDel(it.k); marcarHecha(it.p.idInscripcion); ok++; }
+      catch (e) {
+        if (reintentable(e)) break;                 // sigue sin conexión u ocupado: se prueba más tarde
+        await colaDel(it.k); toast('N° ' + it.p.ordenNro + ': ' + e.message, 'bad');  // el servidor lo rechazó
+      }
+    }
+  } catch (e) {}
+  enviandoCola = false;
+  if (ok) toast('✓ Se enviaron ' + ok + ' calificación(es) pendientes', 'ok');
+  else if (manual && pendientes.length) toast('Todavía sin conexión con el servidor', 'bad');
+  refrescarPend();
+}
+setInterval(() => procesarCola(), 20000);
+window.addEventListener('online', () => procesarCola());
+
 async function enviar() {
   const o = obras[idx]; if (!o) return;
   $('btn-enviar').disabled = true;
   cargando(true, 'Enviando calificación…');
+  let p;
   try {
-    const p = { action: 'guardarCalificacion', jurado: jurado.n, idInscripcion: o.idInscripcion, ordenNro: o.orden, nombreObra: o.obra,
+    p = { action: 'guardarCalificacion', jurado: jurado.n, idInscripcion: o.idInscripcion, ordenNro: o.orden, nombreObra: o.obra,
       puntaje: st.puntaje, puntajeCoreo: o.competeCoreografia === 'Sí' ? (st.coreo || '') : '', premios: [...st.premios].join('|') };
     if (st.audio) p.audioBase64 = await b64(st.audio);
     let r, err;
-    for (let k = 0; k < 3; k++) { try { r = await apiPost(p); break; } catch (e) { err = e; if (/puntaje|audio|Jurado inválido|Falta/.test(e.message)) break; await new Promise(s => setTimeout(s, 1500)); } }
+    for (let k = 0; k < 2; k++) { try { r = await apiPost(p); break; } catch (e) { err = e; if (!reintentable(e)) break; await new Promise(s => setTimeout(s, 1500)); } }
     if (!r) throw err;
-    marcarHecha(o.idInscripcion); pintarLista();
     cargando(false);
     toast('✓ Obra N° ' + o.orden + ' enviada', 'ok');
-    if (idx + 1 < obras.length) abrir(idx + 1);
-    else { $('v-obra').classList.add('hidden'); $('bottom').classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('¡Terminaste todas las obras!', 'ok'); }
+    marcarHecha(o.idInscripcion);
   } catch (e) {
-    cargando(false); toast('No se envió: ' + e.message + '. Probá de nuevo.', 'bad'); validar();
+    cargando(false);
+    if (reintentable(e) && p) {
+      // Falla de conexión: se guarda en el celular y se reenvía sola
+      try {
+        await colaPut({ k: jurado.n + '|' + o.idInscripcion, p, t: Date.now() });
+        toast('📶 No se pudo enviar ahora: quedó guardada en el celular y se envía sola', 'ok');
+      } catch (x) { toast('No se envió ni se pudo guardar. Probá de nuevo.', 'bad'); validar(); return; }
+    } else { toast('No se envió: ' + e.message, 'bad'); validar(); return; }
   }
+  await refrescarPend();
+  if (idx + 1 < obras.length) abrir(idx + 1);
+  else { $('v-obra').classList.add('hidden'); $('bottom').classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('¡Terminaste todas las obras!', 'ok'); }
 }
 init();
 </script>
