@@ -159,7 +159,6 @@ function pintar() {
       ${jur}
       ${x.promedio != null ? `<div class="final"><div><div class="e">Promedio del jurado</div><div class="v">${nota(x.promedio)}</div></div><div style="text-align:right"><div class="e">Resultado</div><div class="pu gold-text">${esc(x.puesto)}</div></div></div>
         ${coreo && x.promedioCoreo != null ? `<div class="final" style="padding-top:0"><div><div class="e">Coreografía</div><div class="v" style="font-size:1.1rem">${nota(x.promedioCoreo)}</div></div><div class="pu gold-text" style="font-size:1rem">${esc(x.puestoCoreo)}</div></div>` : ''}` : ''}
-      ${(x.premiosGanados || []).map(p => `<div class="premio" style="margin-top:12px">🏆 Premio especial: ${esc(p.premio)}${p.ganador ? ' — ' + esc(p.ganador) : ''}</div>`).join('')}
       ${DATA.mostrarPdf ? `<div class="acc"><button class="btn-pdf" onclick="pdf(${i},this)">⬇ Descargar PDF de devolución</button></div>` : ''}
     </div>`;
   }).join('');
