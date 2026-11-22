@@ -18,6 +18,18 @@
     cacheImg[url] = d;
     return d;
   }
+  /** Logo achicado (el original pesa mucho y haría cada PDF de ~500 KB) */
+  async function imagenChica(url, px) {
+    const k = url + '@' + px;
+    if (cacheImg[k]) return cacheImg[k];
+    const d = await imagen(url);
+    const im = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = d; });
+    const c = document.createElement('canvas'); c.width = px; c.height = Math.round(px * im.height / im.width);
+    const g = c.getContext('2d'); g.fillStyle = '#111111'; g.fillRect(0, 0, c.width, c.height);  // mismo negro del encabezado
+    g.drawImage(im, 0, 0, c.width, c.height);
+    cacheImg[k] = c.toDataURL('image/jpeg', 0.88);
+    return cacheImg[k];
+  }
   const txt = s => String(s == null ? '' : s);
   const nota = n => (n == null || n === '' ? '—' : String(n).replace('.', ','));
   function ajustar(doc, s, max, tam, min) {
@@ -36,12 +48,12 @@
     if (opt.doc) doc.addPage();
     const W = 210, M = 14;
     let logo = null;
-    try { logo = await imagen(opt.logo || 'logo.png'); } catch (e) {}
+    try { logo = await imagenChica(opt.logo || 'logo.png', 260); } catch (e) { try { logo = await imagen(opt.logo || 'logo.png'); } catch (x) {} }
 
     // ---- Encabezado
     doc.setFillColor(...NEGRO); doc.rect(0, 0, W, 44, 'F');
     doc.setFillColor(...ORO); doc.rect(0, 44, W, 1.6, 'F');
-    if (logo) doc.addImage(logo, 'PNG', M, 6, 32, 32);
+    if (logo) doc.addImage(logo, /^data:image\/jpeg/.test(logo) ? 'JPEG' : 'PNG', M, 6, 32, 32);
     doc.setTextColor(...ORO); doc.setFont('helvetica', 'bold'); doc.setFontSize(19);
     doc.text('CUP DANCE COMPETITION 2026', 51, 18);
     doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
@@ -92,7 +104,7 @@
     y += 4;
     const coreo = obra.competeCoreografia === 'Sí';
     const head = coreo ? [['Jurado', 'Puntaje', 'Puesto', 'Coreografía', 'Puesto coreografía']] : [['Jurado', 'Puntaje', 'Puesto']];
-    const res = obra.resultados || [];
+    const res = (obra.resultados || []).filter(r => r.puntaje != null && r.puntaje !== '');  // solo jurados con nota
     const body = res.length ? res.map(r => coreo ? [r.jurado, nota(r.puntaje), r.puesto || '—', nota(r.coreo), r.puestoCoreo || '—'] : [r.jurado, nota(r.puntaje), r.puesto || '—'])
       : [[{ content: 'Todavía no hay calificaciones cargadas.', colSpan: coreo ? 5 : 3, styles: { halign: 'center', textColor: GRIS } }]];
     doc.autoTable({
@@ -175,5 +187,5 @@
     return doc;
   }
 
-  window.CDCPDF = { devolucion, certificado, nombreArchivo, imagen };
+  window.CDCPDF = { devolucion, certificado, nombreArchivo, imagen, base64: doc => doc.output('datauristring').split(',')[1] };
 })();
