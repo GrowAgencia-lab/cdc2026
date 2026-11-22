@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Panel de Música — CUP Dance Competition 2026</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="icon" href="../logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;
+  --gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;
+  --ok:#4ADE80;--err:#F87171;--warn:#FBBF24;--info:#A5B4FC;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);
+  --disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;line-height:1.5;min-height:100vh;padding:16px;
+  background-image:radial-gradient(ellipse at 50% -10%,rgba(212,165,55,.16),transparent 60%)}
+.wrap{max-width:820px;margin:0 auto;display:grid;gap:14px}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+.header{background:#000;border:1px solid var(--line2);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.header img{width:58px;height:58px;filter:drop-shadow(0 4px 14px rgba(212,165,55,.4))}
+.header h1{font-family:var(--disp);font-size:1.4rem;text-transform:uppercase;letter-spacing:.5px;line-height:1.1}
+.header p{color:var(--txt2);font-size:.78rem}
+.header .volver{margin-left:auto;color:var(--gold-l);text-decoration:none;font-weight:700;font-size:.8rem;border:1.5px solid var(--line2);padding:.45rem .8rem;border-radius:10px;white-space:nowrap}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.login{max-width:360px;margin:30px auto;text-align:center;display:grid;gap:10px}
+.login input{padding:.75rem;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:1rem;text-align:center}
+.login input:focus{outline:none;border-color:var(--gold)}
+.btn{border:none;border-radius:10px;padding:.7rem 1rem;font-weight:800;font-size:.86rem;background:var(--grad);color:#1A1306}
+.btn:disabled{opacity:.55;cursor:default}
+.btn-line{border:1.5px solid var(--line2);background:transparent;color:var(--gold-l);border-radius:10px;padding:.5rem .85rem;font-weight:700;font-size:.8rem}
+.err-txt{color:var(--err);font-size:.8rem;min-height:1.1em}
+
+.resumen{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:600px){.resumen{grid-template-columns:1fr}}
+.turno-card{background:var(--bg2);border:1.5px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;text-align:left;color:var(--txt);transition:.15s}
+.turno-card:hover{border-color:var(--gold-d)}
+.turno-card.sel{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,165,55,.18)}
+.turno-card .t{font-family:var(--disp);font-size:1.05rem;text-transform:uppercase;letter-spacing:.5px}
+.turno-card .n{font-size:.74rem;color:var(--txt2);margin:2px 0 6px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:99px;border:1px solid transparent;white-space:nowrap}
+.chip-ok{background:rgba(74,222,128,.12);color:var(--ok);border-color:rgba(74,222,128,.35)}
+.chip-vivo{background:rgba(165,180,252,.12);color:var(--info);border-color:rgba(165,180,252,.35)}
+.chip-falta{background:rgba(248,113,113,.12);color:var(--err);border-color:rgba(248,113,113,.35)}
+.chip-total{background:rgba(212,165,55,.14);color:var(--gold-l);border-color:var(--line2)}
+
+.btn-carpeta{width:100%;padding:.9rem;font-size:.92rem}
+.caja{border-radius:12px;padding:12px 14px;font-size:.82rem;line-height:1.55;margin-top:10px}
+.caja.ok{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.35)}
+.caja.err{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.4);color:#FECACA}
+.caja a{color:var(--gold-l);font-weight:800}
+.caja .det{margin-top:6px;font-size:.76rem;color:var(--txt2)}
+.prog{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:8px}
+.prog div{height:100%;width:0;background:var(--grad);transition:width .25s}
+
+.barra{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.f-btn{border:1.5px solid var(--line);background:var(--bg2);color:var(--txt2);font-size:.75rem;font-weight:700;padding:6px 12px;border-radius:99px}
+.f-btn.on{background:var(--grad);color:#1A1306;border-color:var(--gold)}
+.buscar{width:100%;padding:.65rem .9rem;border:1.5px solid var(--line);border-radius:10px;background:var(--bg2);color:var(--txt);font-size:.92rem;margin-bottom:8px}
+.buscar:focus{outline:none;border-color:var(--gold)}
+.info{font-size:.76rem;color:var(--muted);margin-bottom:8px}
+.aviso{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);color:#FDE68A;border-radius:10px;padding:.6rem .8rem;font-size:.78rem;margin-bottom:10px}
+
+.item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px;background:var(--bg2)}
+.item .num{font-family:var(--disp);font-size:1.15rem;font-weight:700;color:var(--gold-l);text-align:center;line-height:1.1}
+.item .num small{display:block;font-family:var(--body);font-size:.62rem;color:var(--muted);font-weight:600}
+.item .obra{font-weight:700;overflow-wrap:anywhere}
+.item .meta{font-size:.72rem;color:var(--txt2)}
+.item .est{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.item a{color:var(--gold-l);font-size:.74rem;font-weight:700;text-decoration:none}
+.item a:hover{text-decoration:underline}
+.grupo-t{font-family:var(--disp);text-transform:uppercase;letter-spacing:.6px;color:var(--gold);font-size:.78rem;margin:12px 0 6px}
+.vacio{text-align:center;color:var(--muted);padding:24px}
+.nota{font-size:.72rem;color:var(--muted);text-align:center}
+@media(max-width:520px){.item{grid-template-columns:38px minmax(0,1fr)}.item .est{grid-column:2;align-items:flex-start;flex-direction:row;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <img src="../logo.png" alt=""/>
+    <div><h1 class="gold-text">Panel de Música</h1><p>CUP Dance Competition 2026 · uso interno · para el DJ</p></div>
+    <a class="volver" href="./">← Panel admin</a>
+  </div>
+
+  <div class="card login hidden" id="login">
+    <b>Ingresá la contraseña del panel admin</b>
+    <input type="password" id="clave" placeholder="Contraseña"/>
+    <div class="err-txt" id="login-err"></div>
+    <button class="btn" id="btn-login">Ingresar</button>
+  </div>
+
+  <div id="app" class="hidden" style="display:grid;gap:14px">
+    <div class="resumen" id="resumen"></div>
+
+    <div class="card">
+      <button class="btn btn-carpeta" id="btn-carpeta">📥 Generar carpeta de audios en orden (para el DJ)</button>
+      <div class="nota" style="margin-top:6px;text-align:left">Copia cada MP3 a la carpeta <b>"Audios DJ - Orden Tentativo"</b> de Drive con el nombre <b>001 - Obra - Academia.mp3</b>, en el orden tentativo guardado. Cada vez que se genera de cero, la carpeta se vacía primero.</div>
+      <div id="resultado"></div>
+    </div>
+
+    <div class="card">
+      <div id="aviso-orden"></div>
+      <div class="barra" id="filtros">
+        <button class="f-btn on" data-f="todos">Todos</button>
+        <button class="f-btn" data-f="falta">❌ Falta música</button>
+        <button class="f-btn" data-f="vivo">🎤 En vivo</button>
+        <button class="f-btn" data-f="ok">✅ Con música</button>
+        <button class="btn-line" id="btn-refrescar" style="margin-left:auto">↻ Refrescar</button>
+      </div>
+      <input class="buscar" id="buscar" placeholder="🔍 Buscar por obra, academia o N°…"/>
+      <div class="info" id="info"></div>
+      <div id="lista"><div class="vacio">Cargando…</div></div>
+    </div>
+    <div class="nota">Lee en vivo la hoja "Orden Tentativo" (lo último guardado con 💾 en el panel admin) y la música de cada inscripción.</div>
+  </div>
+</div>
+
+<script>
+/* 👉 Misma URL que en formulario.js */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyT46Od1IKUY7RYhbDPJDCghj1uiQsZnATwaJGyoGSM2C6X50pn2Y1G5pIlL5Trgih2g/exec';
+const LOTE = 6;          // obras por pedido (chico para que cada pedido tarde segundos)
+const REINTENTOS = 5;    // por si se corta el wifi
+
+let CLAVE = '', ITEMS = [], FILTRO = 'todos', TURNO = '', progreso = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const estado = it => it.en_vivo ? 'vivo' : it.musica_url ? 'ok' : 'falta';
+
+async function getJson(params, progEl, msg) {
+  let ultimo;
+  for (let i = 1; i <= REINTENTOS; i++) {
+    try {
+      const r = await fetch(SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, params, { clave: CLAVE, _ts: Date.now() })), { cache: 'no-store' });
+      const t = await r.text();
+      try { return JSON.parse(t); } catch (e) { throw new Error('El servidor no devolvió una respuesta válida (sobrecarga momentánea).'); }
+    } catch (e) {
+      ultimo = e;
+      if (i < REINTENTOS) { if (progEl) progEl.textContent = '⚠️ ' + (msg || '') + ' — se cortó la conexión, reintentando (' + i + '/' + (REINTENTOS - 1) + ')…'; await new Promise(r => setTimeout(r, 1200 * i)); }
+    }
+  }
+  throw new Error(ultimo && ultimo.message === 'Failed to fetch' ? 'No hay conexión con el servidor.' : (ultimo && ultimo.message) || 'Error de conexión');
+}
+
+/* ---------- LOGIN (usa la misma sesión del panel admin) ---------- */
+function sg(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function ss(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
+async function entrar(c) {
+  CLAVE = c;
+  try {
+    const j = await getJson({ accion: 'musicaOrden' });
+    if (!j.ok) throw new Error(j.error || 'Contraseña incorrecta');
+    ss('cdc_admin', c);
+    $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+    mostrar(j);
+  } catch (e) {
+    ss('cdc_admin', null);
+    $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+    $('login-err').textContent = e.message;
+  }
+}
+$('btn-login').onclick = () => { const c = $('clave').value.trim(); if (c) entrar(c); };
+$('clave').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-login').click(); });
+
+/* ---------- DATOS ---------- */
+function mostrar(j) {
+  ITEMS = (j.items || []).slice().sort((a, b) => a.numero - b.numero);
+  $('aviso-orden').innerHTML = !j.guardado
+    ? '<div class="aviso">⚠️ Todavía no hay un orden tentativo guardado. Andá al panel admin → 🔀 Orden tentativo → 💾 Guardar orden.</div>'
+    : (j.sinOrden ? '<div class="aviso">⚠️ Hay ' + j.sinOrden + ' inscripción(es) que no están en el orden guardado (nuevas o editadas después). Guardá el orden de nuevo en el panel admin para incluirlas.</div>' : '');
+  pintarResumen();
+  pintarLista();
+}
+async function refrescar() {
+  $('lista').innerHTML = '<div class="vacio">Cargando…</div>';
+  try { const j = await getJson({ accion: 'musicaOrden' }); if (!j.ok) throw new Error(j.error); mostrar(j); }
+  catch (e) { $('lista').innerHTML = '<div class="vacio">❌ ' + esc(e.message) + '</div>'; }
+}
+$('btn-refrescar').onclick = refrescar;
+
+function contar(lista) {
+  const c = { total: lista.length, ok: 0, vivo: 0, falta: 0 };
+  lista.forEach(it => c[estado(it)]++);
+  return c;
+}
+function chipsDe(c) {
+  return '<span class="chip chip-total">' + c.total + ' obras</span>' + (c.ok ? '<span class="chip chip-ok">✅ ' + c.ok + '</span>' : '') +
+    (c.vivo ? '<span class="chip chip-vivo">🎤 ' + c.vivo + '</span>' : '') + (c.falta ? '<span class="chip chip-falta">❌ ' + c.falta + '</span>' : '');
+}
+function pintarResumen() {
+  const card = (key, titulo, lista) => '<button class="turno-card' + (TURNO === key ? ' sel' : '') + '" data-t="' + key + '"><div class="t gold-text">' + titulo + '</div>' +
+    '<div class="n">' + (lista.length ? 'N° ' + lista[0].numero + ' al ' + lista[lista.length - 1].numero : 'Sin obras') + '</div><div class="chips">' + chipsDe(contar(lista)) + '</div></button>';
+  $('resumen').innerHTML = card('', '🎵 Todo el día', ITEMS) + card('Mañana', '☀️ Turno mañana', ITEMS.filter(i => i.turno === 'Mañana')) + card('Tarde', '🌙 Turno tarde', ITEMS.filter(i => i.turno === 'Tarde'));
+  $('resumen').querySelectorAll('.turno-card').forEach(b => b.onclick = () => { TURNO = b.dataset.t; pintarResumen(); pintarLista(); });
+}
+
+$('filtros').querySelectorAll('.f-btn').forEach(b => b.onclick = () => {
+  FILTRO = b.dataset.f;
+  $('filtros').querySelectorAll('.f-btn').forEach(x => x.classList.toggle('on', x === b));
+  pintarLista();
+});
+$('buscar').addEventListener('input', pintarLista);
+
+function idDrive(url) { const m = String(url || '').match(/(?:\/d\/|id=)([-\w]{20,})/); return m ? m[1] : ''; }
+function pintarLista() {
+  const q = norm($('buscar').value.trim());
+  let l = ITEMS.filter(it => (!TURNO || it.turno === TURNO) && (FILTRO === 'todos' || estado(it) === FILTRO) &&
+    (!q || norm(it.obra).includes(q) || norm(it.academia).includes(q) || String(it.numero) === q));
+  $('info').textContent = l.length + ' resultado' + (l.length === 1 ? '' : 's');
+  if (!l.length) { $('lista').innerHTML = '<div class="vacio">No hay obras que coincidan.</div>'; return; }
+  let tPrev = null;
+  $('lista').innerHTML = l.map(it => {
+    let badge;
+    if (it.en_vivo) badge = '<span class="chip chip-vivo">🎤 En vivo</span>';
+    else if (it.musica_url) { const id = idDrive(it.musica_url); badge = '<span class="chip chip-ok">✅ Con música</span><a href="' + esc(id ? 'https://drive.google.com/file/d/' + id + '/view' : it.musica_url) + '" target="_blank" rel="noopener">▶ escuchar</a>'; }
+    else badge = '<span class="chip chip-falta">❌ Falta música</span>' + (it.pendrive ? '<span class="meta">traen pendrive</span>' : '');
+    const cab = !TURNO && it.turno !== tPrev ? '<div class="grupo-t">' + (it.turno === 'Mañana' ? '☀️ Turno mañana' : it.turno === 'Tarde' ? '🌙 Turno tarde' : 'Sin turno') + '</div>' : '';
+    tPrev = it.turno;
+    return cab + '<div class="item"><div class="num">' + esc(it.numero) + (it.hora ? '<small>' + esc(it.hora) + '</small>' : '') + '</div>' +
+      '<div><div class="obra">' + esc(it.obra) + '</div><div class="meta">' + esc(it.academia) + ' · ' + esc(it.modalidad) + ' · ' + esc(it.categoria) + ' · ' + esc(it.tipo) + (it.duracion ? ' · ⏱ ' + esc(it.duracion) : '') + '</div></div>' +
+      '<div class="est">' + badge + '</div></div>';
+  }).join('');
+}
+
+/* ---------- CARPETA PARA EL DJ (por lotes, retoma si se corta) ---------- */
+$('btn-carpeta').onclick = generarCarpeta;
+async function generarCarpeta() {
+  if (!ITEMS.length) { alert('Todavía no hay obras en el orden tentativo guardado.'); return; }
+  const sigue = progreso && progreso.prep;
+  if (!confirm(sigue
+    ? 'La vez pasada se cortó a mitad de camino. Esto CONTINÚA copiando lo que falta (no borra lo ya copiado). ¿Continuar?'
+    : 'Esto arma de cero la carpeta "Audios DJ - Orden Tentativo" con las ' + ITEMS.length + ' obras en orden. Si ya existe, primero se vacía para que no queden pistas con la numeración vieja. ¿Continuar?')) return;
+  if (!progreso) progreso = { prep: null, listos: {}, copiadas: [], sinMusica: [], enVivo: [], errores: [] };
+  const btn = $('btn-carpeta'), res = $('resultado');
+  btn.disabled = true;
+  res.innerHTML = '<div class="caja ok"><span id="prog-txt">Preparando carpeta…</span><div class="prog"><div id="prog-bar"></div></div></div>';
+  const txt = $('prog-txt'), bar = $('prog-bar');
+  try {
+    if (!progreso.prep) {
+      const p = await getJson({ accion: 'prepararCarpetaDJ' }, txt, 'Preparando carpeta');
+      if (!p.ok) throw new Error(p.error || 'No se pudo preparar la carpeta');
+      progreso.prep = p;
+    }
+    progreso.errores = [];
+    const total = ITEMS.length;
+    const pendientes = ITEMS.filter(it => !progreso.listos[it.numero]);
+    const hechas0 = total - pendientes.length;
+    for (let i = 0; i < pendientes.length; i += LOTE) {
+      const lote = pendientes.slice(i, i + LOTE);
+      const hechas = hechas0 + Math.min(i + LOTE, pendientes.length);
+      const msg = 'Copiando… ' + hechas + ' de ' + total;
+      txt.textContent = '⏳ ' + msg; btn.textContent = msg; bar.style.width = Math.round(hechas / total * 100) + '%';
+      const j = await getJson({ accion: 'copiarLoteDJ', items: JSON.stringify(lote.map(x => ({ id: x.id, numero: x.numero }))) }, txt, msg);
+      if (!j.ok) throw new Error(j.error || 'Se cortó al copiar un lote');
+      (j.copiadas || []).forEach(o => { progreso.listos[o.numero] = true; progreso.copiadas.push(o); });
+      (j.sinMusica || []).forEach(o => { progreso.listos[o.numero] = true; progreso.sinMusica.push(o); });
+      (j.enVivo || []).forEach(o => { progreso.listos[o.numero] = true; progreso.enVivo.push(o); });
+      (j.errores || []).forEach(o => progreso.errores.push(o));
+    }
+    const P = progreso, lista = a => a.sort((x, y) => x.numero - y.numero).map(o => 'N° ' + esc(o.numero) + ' — ' + esc(o.obra) + (o.error ? ' (' + esc(o.error) + ')' : '')).join(', ');
+    res.innerHTML = '<div class="caja ok">✅ Carpeta lista: <b>' + P.copiadas.length + '</b> de ' + total + ' pistas copiadas en orden.<br>' +
+      '<a href="' + esc(P.prep.carpetaUrl) + '" target="_blank" rel="noopener">📁 Abrir carpeta en Drive</a> <span class="det">(desde Drive: clic derecho en la carpeta → Descargar, y se la pasás al DJ en un pendrive)</span>' +
+      (P.sinMusica.length ? '<div class="det">❌ Sin música cargada (' + P.sinMusica.length + '): ' + lista(P.sinMusica) + '</div>' : '') +
+      (P.enVivo.length ? '<div class="det">🎤 En vivo, sin pista (' + P.enVivo.length + '): ' + lista(P.enVivo) + '</div>' : '') +
+      (P.errores.length ? '<div class="det" style="color:var(--warn)">⚠️ No se pudieron copiar (' + P.errores.length + '): ' + lista(P.errores) + ' — tocá el botón de nuevo para reintentar solo esas.</div>' : '') + '</div>';
+    if (!P.errores.length) progreso = null;
+  } catch (e) {
+    res.innerHTML = '<div class="caja err">❌ ' + esc(e.message) + '<br><small>Si tocás el botón de nuevo, continúa donde se cortó. Para empezar de cero, recargá la página.</small></div>';
+  } finally { btn.disabled = false; btn.textContent = '📥 Generar carpeta de audios en orden (para el DJ)'; }
+}
+
+/* ---------- INICIO ---------- */
+const guardada = sg('cdc_admin');
+if (guardada) entrar(guardada); else $('login').classList.remove('hidden');
+</script>
+</body>
+</html>
