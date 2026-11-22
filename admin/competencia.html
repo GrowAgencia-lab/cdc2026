@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Panel de Competencia — CUP Dance Competition 2026</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="icon" href="../logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<script src="../devolucion-pdf.js?v=2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;
+  --gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;
+  --ok:#4ADE80;--err:#F87171;--warn:#FBBF24;--info:#A5B4FC;
+  --oro:#F5D77A;--plata:#D6D3CE;--bronce:#D08A4E;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);
+  --disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;line-height:1.5;min-height:100vh;padding:16px;
+  background-image:radial-gradient(ellipse at 50% -10%,rgba(212,165,55,.14),transparent 60%)}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:14px}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+button,select,input{font-family:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+a{color:var(--gold-l)}
+
+.header{background:#000;border:1px solid var(--line2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;flex-wrap:wrap}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.header img{width:52px;height:52px}
+.header h1{font-family:var(--disp);font-size:1.35rem;text-transform:uppercase;letter-spacing:.5px;line-height:1.1}
+.header p{color:var(--txt2);font-size:.76rem}
+.header .acc{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.estado-con{font-size:.72rem;color:var(--txt2);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1.5px solid var(--line2);background:var(--card);color:var(--txt2);border-radius:10px;padding:.6rem .95rem;font-weight:700;font-size:.85rem}
+.tab.on{background:var(--grad);color:#1A1306;border-color:transparent}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card h2{font-family:var(--disp);font-size:1rem;text-transform:uppercase;letter-spacing:.6px;color:var(--gold-l);margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .der{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+
+.btn{border:none;border-radius:10px;padding:.65rem 1rem;font-weight:800;font-size:.85rem;background:var(--grad);color:#1A1306}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-line{border:1.5px solid var(--line2);background:transparent;color:var(--gold-l);border-radius:10px;padding:.45rem .8rem;font-weight:700;font-size:.78rem;text-decoration:none;display:inline-block}
+.btn-sm{border:1px solid var(--line2);background:var(--bg2);color:var(--txt2);border-radius:8px;padding:.3rem .55rem;font-weight:700;font-size:.72rem}
+.btn-sm.rojo{color:var(--err);border-color:rgba(248,113,113,.4)}
+.btn-sm.verde{color:var(--ok);border-color:rgba(74,222,128,.4)}
+input[type=text],input[type=password],input[type=number],select{padding:.55rem .7rem;border-radius:10px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.88rem}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+.msg{color:var(--txt2);font-size:.85rem;text-align:center;padding:14px}
+.muted{color:var(--muted);font-size:.75rem}
+
+.login{max-width:360px;margin:40px auto;text-align:center;display:grid;gap:10px}
+.login input{text-align:center;font-size:1rem;padding:.75rem}
+.err-txt{color:var(--err);font-size:.8rem;min-height:1.1em}
+
+/* medallas */
+.medallas{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:800px){.medallas{grid-template-columns:repeat(2,1fr)}}
+.med{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.med .n{font-family:var(--disp);font-size:2.3rem;line-height:1}
+.med .l{font-size:.7rem;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.med.oro .n{color:var(--oro)}.med.plata .n{color:var(--plata)}.med.bronce .n{color:var(--bronce)}.med.pend .n{color:var(--muted)}.med.tot .n{color:var(--txt)}
+
+/* en vivo */
+.vivo{background:linear-gradient(135deg,#1F1808,#000);border:1px solid var(--gold-d);border-radius:14px;padding:16px;display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:800px){.vivo{grid-template-columns:1fr}}
+.vivo .et{font-size:.7rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--gold)}
+.vivo .ob{font-family:var(--disp);font-size:1.5rem;text-transform:uppercase;line-height:1.1;margin-top:4px}
+.vivo .ac{color:var(--txt2);font-size:.85rem}
+.crono{font-family:var(--disp);font-size:2rem;color:var(--gold-l);font-variant-numeric:tabular-nums;margin-top:6px}
+.vivo .lado{border-left:1px solid var(--line2);padding-left:16px;font-size:.85rem;display:grid;gap:6px;align-content:start}
+@media(max-width:800px){.vivo .lado{border-left:none;padding-left:0;border-top:1px solid var(--line2);padding-top:12px}}
+.barra{height:6px;border-radius:9px;background:var(--bg2);overflow:hidden}.barra i{display:block;height:100%;background:var(--grad)}
+
+/* tablas */
+.tw{overflow:auto;max-height:520px;border-radius:10px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{position:sticky;top:0;background:#0F0D09;color:var(--gold);text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;padding:8px;border-bottom:1px solid var(--line2);white-space:nowrap;z-index:1}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:rgba(212,165,55,.04)}
+.c{text-align:center}
+.pill{display:inline-block;font-size:.68rem;font-weight:800;padding:.12rem .5rem;border-radius:20px;white-space:nowrap}
+.p1{background:rgba(245,215,122,.15);color:var(--oro)}.p2{background:rgba(214,211,206,.13);color:var(--plata)}.p3{background:rgba(208,138,78,.15);color:var(--bronce)}.p0{background:var(--bg2);color:var(--muted)}
+.jb{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;border-radius:6px;font-size:.7rem;font-weight:800;margin-right:3px;padding:0 4px}
+.jb.ok{background:rgba(74,222,128,.14);color:var(--ok)}.jb.sa{background:rgba(251,191,36,.14);color:var(--warn)}.jb.no{background:rgba(248,113,113,.12);color:var(--err)}
+.est{font-size:.68rem;font-weight:800;padding:.12rem .5rem;border-radius:20px;white-space:nowrap}
+.e-espera{background:var(--bg2);color:var(--muted)}.e-escena{background:var(--grad);color:#1A1306}.e-bailo{background:rgba(74,222,128,.14);color:var(--ok)}.e-nose{background:rgba(248,113,113,.12);color:var(--err)}
+
+/* escenario */
+.esc-list{display:grid;gap:8px}
+.eo{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
+.eo.escena{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 6px 24px rgba(212,165,55,.18)}
+.eo.bailo,.eo.nose{opacity:.55}
+.eo .nro{font-family:var(--disp);font-size:1.4rem;color:var(--gold-l);min-width:42px;text-align:center}
+.eo .inf{flex:1;min-width:180px}
+.eo .inf b{display:block}
+.eo .inf small{color:var(--muted);font-size:.72rem}
+.eo .bts{display:flex;gap:6px;flex-wrap:wrap}
+.be{border:1.5px solid var(--line2);background:transparent;color:var(--txt2);border-radius:9px;padding:.4rem .65rem;font-size:.74rem;font-weight:700}
+.be.on-escena{background:var(--grad);color:#1A1306;border-color:transparent}
+.be.on-bailo{background:rgba(74,222,128,.14);color:var(--ok);border-color:var(--ok)}
+.be.on-nose{background:rgba(248,113,113,.12);color:var(--err);border-color:var(--err)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input[type=text]{flex:1;min-width:180px}
+
+/* calificaciones */
+.jrow{display:grid;grid-template-columns:150px 90px 90px 1fr 220px auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);margin-bottom:8px}
+@media(max-width:1000px){.jrow{grid-template-columns:1fr 1fr}}
+.jrow .jn{font-weight:800}
+.jrow label{font-size:.66rem;color:var(--muted);display:block;text-transform:uppercase;letter-spacing:.5px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{border:1px solid var(--line2);background:transparent;color:var(--txt2);border-radius:20px;padding:.15rem .5rem;font-size:.66rem;font-weight:700}
+.chip.on{border-color:var(--gold);color:var(--gold-l);background:rgba(212,165,55,.12)}
+.obra-cab{display:flex;gap:14px;align-items:flex-start;margin-bottom:12px}
+.obra-cab .n{font-family:var(--disp);font-size:2.4rem;line-height:1;min-width:60px;text-align:center}
+.obra-cab .t{font-family:var(--disp);font-size:1.3rem;text-transform:uppercase}
+
+/* premios */
+.pgrp{border:1px solid var(--line);border-radius:12px;background:var(--bg2);margin-bottom:8px}
+.pgrp summary{padding:10px 12px;cursor:pointer;font-weight:800;color:var(--gold-l);list-style:none;display:flex;gap:8px;align-items:center}
+.pgrp summary::-webkit-details-marker{display:none}
+.pgrp summary .cnt{color:var(--muted);font-weight:600;font-size:.75rem}
+.pgrp summary .gano{margin-left:auto;font-size:.72rem;color:var(--ok)}
+.pgrp .in{padding:0 12px 12px}
+
+/* switches */
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);margin-bottom:8px}
+.sw b{display:block}
+.sw small{color:var(--muted);font-size:.74rem}
+.tog{position:relative;width:52px;height:28px;border-radius:20px;border:none;background:#3a3326;flex-shrink:0}
+.tog::after{content:'';position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#bbb;transition:.2s}
+.tog.on{background:var(--gold)}.tog.on::after{left:27px;background:#1A1306}
+
+.toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:#111;border:1px solid var(--gold-d);color:var(--txt);padding:.7rem 1rem;border-radius:12px;font-size:.85rem;font-weight:700;z-index:80;max-width:90vw;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.toast.ok{border-color:var(--ok)}.toast.bad{border-color:var(--err)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:grid;place-items:center;z-index:70;padding:16px}
+.modal .box{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:18px;width:100%;max-width:480px;display:grid;gap:10px}
+.modal .box h3{font-family:var(--disp);text-transform:uppercase;color:var(--gold-l)}
+.modal .box label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.modal .box input,.modal .box select{width:100%}
+.modal .acc{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <img src="../logo.png" alt=""/>
+    <div><h1><span class="gold-text">Panel de Competencia</span></h1><p>CUP Dance Competition 2026 · Jurado, escenario, premios y devoluciones</p></div>
+    <div class="acc">
+      <span class="estado-con hidden" id="estado-con"><span class="dot" id="dot"></span><span id="estado-txt"></span></span>
+      <button class="btn-line hidden" id="btn-act" onclick="cargar(true)">🔄 Actualizar</button>
+      <a class="btn-line" id="btn-planilla" href="#" target="_blank" rel="noopener" style="display:none">📄 Planilla jurado</a>
+      <a class="btn-line" href="./">‹ Admin</a>
+    </div>
+  </div>
+
+  <div class="card login hidden" id="login">
+    <h2 style="justify-content:center">Ingresar</h2>
+    <input type="password" id="clave" placeholder="Contraseña" onkeydown="if(event.key==='Enter')entrar()"/>
+    <button class="btn" onclick="entrar()">Entrar</button>
+    <div class="err-txt" id="login-err"></div>
+  </div>
+
+  <div id="app" class="hidden" style="display:grid;gap:14px">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-t="dash">📊 Dashboard</button>
+      <button class="tab" data-t="esc">🎤 Escenario</button>
+      <button class="tab" data-t="cal">⚖️ Calificaciones</button>
+      <button class="tab" data-t="pre">🏆 Premios especiales</button>
+      <button class="tab" data-t="dev">📄 Devoluciones y portal</button>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="t-dash" style="display:grid;gap:14px">
+      <div class="vivo" id="vivo"></div>
+      <div class="medallas" id="medallas"></div>
+      <div class="card"><h2>⚖️ Calificaciones cargadas por jurado</h2><div class="grid3" id="prog-jurados" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))"></div></div>
+      <div class="grid2">
+        <div class="card"><h2>🏆 Academias con más premios</h2><div id="tab-acad"></div></div>
+        <div class="card"><h2>🎭 Por tipo de participación</h2><div id="tab-tipos"></div></div>
+      </div>
+      <div class="card"><h2>⭐ Ganadores de premios especiales</h2><div id="tab-gan-dash"></div></div>
+      <div class="card">
+        <h2>📋 Estado de las devoluciones <span class="der"><label class="muted" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="solo-falta" onchange="pintarDash()"/> Solo con faltantes</label></span></h2>
+        <div class="muted" style="margin-bottom:8px"><span class="jb ok">J1</span> calificó con audio · <span class="jb sa">J1</span> calificó sin audio · <span class="jb no">J1</span> no calificó</div>
+        <div class="tw" id="tab-estado"></div>
+      </div>
+      <div class="card">
+        <h2>🏅 Resultados en orden de baile <span class="der"><button class="btn-line" onclick="pdfResultados()">⬇ PDF de resultados</button></span></h2>
+        <div class="tw" id="tab-result"></div>
+      </div>
+    </section>
+
+    <!-- ===== ESCENARIO ===== -->
+    <section id="t-esc" class="hidden" style="display:grid;gap:14px">
+      <div class="vivo" id="vivo2"></div>
+      <div class="card">
+        <div class="toolbar">
+          <button class="btn" onclick="siguiente()">▶ Pasar a la siguiente obra</button>
+          <input type="text" id="esc-q" placeholder="🔍 Buscar obra, academia o N°" oninput="pintarEsc()"/>
+          <select id="esc-f" onchange="pintarEsc()"><option value="">Todas</option><option>En espera</option><option>En escenario</option><option>Ya bailó</option><option>No se presenta</option></select>
+          <a class="btn-line" href="../en-vivo.html" target="_blank">👁 Ver página pública</a>
+        </div>
+        <div class="muted" style="margin-bottom:10px">Al poner una obra “En escenario”, la que estaba antes pasa sola a “Ya bailó”. Lo que marcás acá se ve en la página pública En vivo.</div>
+        <div class="esc-list" id="esc-list"></div>
+      </div>
+    </section>
+
+    <!-- ===== CALIFICACIONES ===== -->
+    <section id="t-cal" class="hidden" style="display:grid;gap:14px">
+      <div class="card">
+        <h2>🔍 Buscar obra para corregir o cargar</h2>
+        <div class="toolbar">
+          <input type="number" id="cal-n" placeholder="N° de orden" style="max-width:160px" onkeydown="if(event.key==='Enter')abrirCal()"/>
+          <button class="btn" onclick="abrirCal()">Abrir</button>
+          <span class="muted">Usalo si un jurado no pudo cargar desde su celular, o para corregir un puntaje o subir un audio.</span>
+        </div>
+        <div id="cal-obra"></div>
+      </div>
+      <div class="card"><h2>⏳ Obras con calificaciones faltantes</h2><div class="tw" id="cal-falt"></div></div>
+    </section>
+
+    <!-- ===== PREMIOS ===== -->
+    <section id="t-pre" class="hidden" style="display:grid;gap:14px">
+      <div class="grid2">
+        <div class="card">
+          <h2>⭐ Postulaciones del jurado</h2>
+          <div class="muted" style="margin-bottom:10px">Cada número es la cantidad de jurados que postularon esa obra. Tocá “Ganador” para registrarlo.</div>
+          <div id="pre-post"></div>
+        </div>
+        <div style="display:grid;gap:14px;align-content:start">
+          <div class="card">
+            <h2>✏️ Registrar ganador a mano</h2>
+            <div style="display:grid;gap:8px">
+              <select id="m-premio"></select>
+              <input type="number" id="m-nro" placeholder="N° de obra (opcional)"/>
+              <input type="text" id="m-ganador" placeholder="Nombre del ganador/a (bailarín, coreógrafo, academia…)"/>
+              <input type="text" id="m-notas" placeholder="Notas (opcional)"/>
+              <button class="btn" onclick="ganadorManual()">Registrar ganador</button>
+            </div>
+          </div>
+          <div class="card">
+            <h2>🏆 Ganadores registrados <span class="der"><button class="btn-line" onclick="todosCertificados()">🎓 Todos los certificados</button><button class="btn-line" onclick="pdfGanadores()">🖨 Lista</button></span></h2>
+            <div id="pre-gan"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DEVOLUCIONES ===== -->
+    <section id="t-dev" class="hidden" style="display:grid;gap:14px">
+      <div class="grid2">
+        <div class="card">
+          <h2>🌐 Publicación</h2>
+          <div id="switches"></div>
+          <div class="muted" style="margin-top:6px">Portal de devoluciones: <a href="../devoluciones.html" target="_blank" id="link-portal">devoluciones.html</a> · En vivo: <a href="../en-vivo.html" target="_blank">en-vivo.html</a></div>
+        </div>
+        <div class="card">
+          <h2>📄 PDF de devolución</h2>
+          <div class="muted" style="margin-bottom:10px">El PDF se arma solo con las calificaciones del momento: cada academia lo descarga desde el portal. Acá podés revisarlos o bajarlos todos juntos.</div>
+          <div style="display:grid;gap:8px">
+            <select id="pdf-acad"><option value="">Todas las academias</option></select>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn" onclick="pdfDevolucionesLote()">⬇ Descargar PDF (todas las obras del filtro)</button>
+              <input type="number" id="pdf-n" placeholder="N°" style="width:90px"/><button class="btn-line" onclick="pdfUna()">PDF de una obra</button>
+            </div>
+            <div class="muted" id="pdf-prog"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🔑 Accesos de las academias (PIN) <span class="der"><button class="btn-line" onclick="sincPins()">➕ Crear PIN para academias nuevas</button></span></h2>
+        <div class="muted" style="margin-bottom:10px">Cada academia entra al portal con su nombre y su PIN. El botón WhatsApp abre el mensaje listo con el link y el PIN.</div>
+        <div class="toolbar"><input type="text" id="acc-q" placeholder="🔍 Buscar academia" oninput="pintarAccesos()"/></div>
+        <div class="tw" id="tab-acc"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ====== CONFIGURACIÓN ====== misma URL que jurado.html */
+const JURADO_URL = 'https://script.google.com/macros/s/AKfycbzEzVg-Vj7TDHwG3441kbkd8UKIrRwnpdiTVGGKZQtQob3xv5gWs9Qc9N6T8Tmp9O274A/exec';
+const PREMIOS = ['Gran Copa','Mejor Bailarín/a','Bailarín/a Destacado/a','Revelación','Mejor Coreógrafo/a','Mejor Grupo','Mejor Academia','Mejor Intérprete','Mejor Vestuario','Mejor Dúo','Mejor Maestro Preparador (Danza Clásica)'];
+const PORTAL_URL = new URL('../devoluciones.html', location.href).href;
+const SS = 'cdc_comp';
+
+let CLAVE = null, D = null, tab = 'dash', timer = null, cargando = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nota = n => n == null || n === '' ? '—' : String(n).replace('.', ',');
+const clave = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+function toast(t, cls) { const d = document.createElement('div'); d.className = 'toast ' + (cls || ''); d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 3500); }
+function sg(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function ss(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
+
+async function post(params) {
+  const r = await fetch(JURADO_URL, { method: 'POST', body: new URLSearchParams(Object.assign({ clave: CLAVE }, params)) });
+  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'Error'); return j;
+}
+
+/* ====== LOGIN ====== */
+async function entrar(guardada) {
+  const c = guardada || $('clave').value.trim(); if (!c) return;
+  $('login-err').textContent = 'Verificando…';
+  CLAVE = c;
+  try { await post({ action: 'adminLogin' }); }
+  catch (e) { CLAVE = null; ss(SS, null); $('login').classList.remove('hidden'); $('login-err').textContent = e.message; return; }
+  ss(SS, c);
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  ['estado-con', 'btn-act'].forEach(i => $(i).classList.remove('hidden'));
+  await cargar(true);
+  timer = setInterval(() => { if (!document.hidden && tab !== 'cal' && !$('modal')) cargar(); }, 15000);
+  setInterval(cronos, 1000);
+}
+
+async function cargar(fresco) {
+  if (cargando) return; cargando = true;
+  try {
+    D = await post({ action: 'adminDatos', fresco: fresco ? '1' : '' });
+    $('dot').style.background = 'var(--ok)';
+    $('estado-txt').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (D.urlPlanilla) { $('btn-planilla').href = D.urlPlanilla; $('btn-planilla').style.display = ''; }
+    pintar();
+  } catch (e) {
+    $('dot').style.background = 'var(--err)'; $('estado-txt').textContent = 'Error: ' + e.message;
+    if (/Contraseña/.test(e.message)) { ss(SS, null); location.reload(); }
+  } finally { cargando = false; }
+}
+
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  tab = b.dataset.t;
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+  ['dash', 'esc', 'cal', 'pre', 'dev'].forEach(t => $('t-' + t).classList.toggle('hidden', t !== tab));
+  pintar();
+});
+function pintar() {
+  if (!D) return;
+  pintarVivo();
+  if (tab === 'dash') pintarDash();
+  if (tab === 'esc') pintarEsc();
+  if (tab === 'cal') pintarFaltantes();
+  if (tab === 'pre') pintarPremios();
+  if (tab === 'dev') pintarDev();
+}
+
+/* ====== UTILIDADES ====== */
+function seg(d) { const m = /^(\d+):(\d{1,2})/.exec(String(d || '').trim()); return m ? +m[1] * 60 + +m[2] : 0; }
+function mmss(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function pillPuesto(p) { const c = /^1/.test(p) ? 'p1' : /^2/.test(p) ? 'p2' : /^3/.test(p) ? 'p3' : 'p0'; return `<span class="pill ${c}">${esc(p || 'Pendiente')}</span>`; }
+function claseEst(e) { return e === 'En escenario' ? 'escena' : e === 'Ya bailó' ? 'bailo' : e === 'No se presenta' ? 'nose' : 'espera'; }
+function obraPorN(n) { return D.obras.find(o => Number(o.orden) === Number(n)); }
+function partsTxt(o) { return Array.isArray(o.participantes) ? o.participantes.join(', ') : (o.participantes || ''); }
+
+/* ====== EN VIVO ====== */
+function pintarVivo() {
+  const obras = D.obras, act = obras.find(o => o.estado === 'En escenario');
+  const pasaron = obras.filter(o => o.estado === 'Ya bailó' || o.estado === 'No se presenta').length;
+  const pend = obras.filter(o => o.estado === 'En espera');
+  const prox = pend[0];
+  let total = 0, sinDur = 0;
+  if (act) { const s = seg(act.duracion); if (s && act.actualizado) total += Math.max(0, s - (Date.now() - new Date(act.actualizado)) / 1000) + 30; }
+  pend.forEach(o => { const s = seg(o.duracion); if (s) total += s + 30; else { total += 180; sinDur++; } });
+  const fin = new Date(Date.now() + total * 1000).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+  const html = `<div>
+      <div class="et">🎭 En escenario ahora</div>
+      ${act ? `<div class="ob">N° ${act.orden} — ${esc(act.obra)}</div><div class="ac">${esc(act.academia)} · ${esc(act.modalidad)} · ${esc(act.categoria)} · ${esc(act.tipoParticipacion)}</div>
+        <div class="crono" data-ini="${esc(act.actualizado)}" data-dur="${seg(act.duracion)}">${act.duracion ? '—' : 'sin duración cargada'}</div>`
+      : '<div class="ob" style="color:var(--muted)">Nadie en escenario</div>'}
+    </div>
+    <div class="lado">
+      <div><span class="et">Próxima</span><br>${prox ? `<b>N° ${prox.orden} — ${esc(prox.obra)}</b><br><span class="muted">${esc(prox.academia)}</span>` : '—'}</div>
+      <div>${pasaron} / ${obras.length} obras ya pasaron</div>
+      <div class="barra"><i style="width:${obras.length ? pasaron / obras.length * 100 : 0}%"></i></div>
+      ${pend.length ? `<div>⏱ Fin estimado ~<b>${fin}</b>${sinDur ? ` <span class="muted">(${sinDur} sin duración, calculadas a 3 min)</span>` : ''}</div>` : ''}
+    </div>`;
+  $('vivo').innerHTML = html; $('vivo2').innerHTML = html; cronos();
+}
+function cronos() {
+  document.querySelectorAll('.crono[data-ini]').forEach(el => {
+    const d = +el.dataset.dur, ini = el.dataset.ini; if (!d || !ini) return;
+    const r = d - (Date.now() - new Date(ini)) / 1000;
+    el.textContent = r > 0 ? '🎵 ' + mmss(r) : '🎵 0:00 · terminando';
+  });
+}
+
+/* ====== DASHBOARD ====== */
+function pintarDash() {
+  const obras = D.obras, nJ = D.jurados.length;
+  const c = { 1: 0, 2: 0, 3: 0 }; let pend = 0;
+  obras.forEach(o => { const m = /^(\d)/.exec(o.puesto || ''); if (m && o.votos >= nJ) c[m[1]]++; else if (o.estado !== 'No se presenta') pend++; });
+  $('medallas').innerHTML = `
+    <div class="med oro"><div class="n">${c[1]}</div><div class="l">🥇 1er puesto</div></div>
+    <div class="med plata"><div class="n">${c[2]}</div><div class="l">🥈 2do puesto</div></div>
+    <div class="med bronce"><div class="n">${c[3]}</div><div class="l">🥉 3er puesto</div></div>
+    <div class="med pend"><div class="n">${pend}</div><div class="l">⏳ Sin las ${nJ} notas</div></div>
+    <div class="med tot"><div class="n">${obras.length}</div><div class="l">Obras en el orden</div></div>`;
+  $('prog-jurados').innerHTML = D.jurados.map(j => {
+    const hechas = obras.filter(o => o.resultados.some(r => r.n === j.n));
+    const sinAudio = hechas.filter(o => o.resultados.some(r => r.n === j.n && !r.audioUrl)).length;
+    const pasaron = obras.filter(o => o.estado === 'Ya bailó' || o.estado === 'En escenario');
+    const debe = pasaron.filter(o => !o.resultados.some(r => r.n === j.n));
+    return `<div class="sw" style="display:block"><b>J${j.n} · ${esc(j.nombre)}</b>
+      <div class="barra" style="margin:8px 0"><i style="width:${obras.length ? hechas.length / obras.length * 100 : 0}%"></i></div>
+      <small>${hechas.length} / ${obras.length} calificadas${sinAudio ? ` · <span style="color:var(--warn)">${sinAudio} sin audio</span>` : ''}</small>
+      ${debe.length ? `<div style="color:var(--err);font-size:.74rem;margin-top:4px">⚠️ Le falta${debe.length > 1 ? 'n' : ''} N° ${debe.slice(0, 12).map(o => o.orden).join(', ')}${debe.length > 12 ? '…' : ''} (ya bailaron)</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Academias
+  const ac = {};
+  obras.forEach(o => { const m = /^(\d)/.exec(o.puesto || ''); if (!m || !o.academia) return; const k = clave(o.academia); ac[k] = ac[k] || { n: o.academia, 1: 0, 2: 0, 3: 0, t: 0 }; ac[k][m[1]]++; ac[k].t++; });
+  const rk = Object.values(ac).sort((a, b) => b[1] - a[1] || b[2] - a[2] || b[3] - a[3] || b.t - a.t);
+  $('tab-acad').innerHTML = rk.length ? `<div class="tw" style="max-height:380px"><table><tr><th>#</th><th>Academia</th><th class="c">🥇</th><th class="c">🥈</th><th class="c">🥉</th><th class="c">Total</th></tr>
+    ${rk.map((a, i) => `<tr><td><b>${i + 1}</b></td><td>${esc(a.n)}</td><td class="c">${a[1]}</td><td class="c">${a[2]}</td><td class="c">${a[3]}</td><td class="c"><b>${a.t}</b></td></tr>`).join('')}</table></div>` : '<div class="msg">Todavía no hay resultados.</div>';
+
+  const tp = {};
+  obras.forEach(o => { const t = o.tipoParticipacion || '—'; tp[t] = tp[t] || { c: 0, 1: 0, 2: 0, 3: 0 }; tp[t].c++; const m = /^(\d)/.exec(o.puesto || ''); if (m) tp[t][m[1]]++; });
+  $('tab-tipos').innerHTML = `<div class="tw" style="max-height:380px"><table><tr><th>Tipo</th><th class="c">Obras</th><th class="c">🥇</th><th class="c">🥈</th><th class="c">🥉</th></tr>
+    ${Object.entries(tp).sort((a, b) => b[1].c - a[1].c).map(([t, v]) => `<tr><td>${esc(t)}</td><td class="c">${v.c}</td><td class="c">${v[1]}</td><td class="c">${v[2]}</td><td class="c">${v[3]}</td></tr>`).join('')}</table></div>`;
+
+  $('tab-gan-dash').innerHTML = D.ganadores.length ? `<div class="tw"><table><tr><th>Premio</th><th>N°</th><th>Obra</th><th>Academia</th><th>Ganador/a</th></tr>
+    ${D.ganadores.map(g => `<tr><td><b style="color:var(--gold-l)">${esc(g.premio)}</b></td><td>${esc(g.nro)}</td><td>${esc(g.obra)}</td><td>${esc(g.academia)}</td><td>${esc(g.ganador)}</td></tr>`).join('')}</table></div>` : '<div class="msg">Todavía no se registraron ganadores.</div>';
+
+  const solo = $('solo-falta').checked;
+  const filas = obras.filter(o => !solo || o.votos < nJ || o.resultados.some(r => !r.audioUrl));
+  $('tab-estado').innerHTML = `<table><tr><th>N°</th><th>Obra</th><th>Academia</th><th>Escenario</th><th>Jurados</th><th>Promedio</th><th></th></tr>
+    ${filas.map(o => `<tr><td><b>${o.orden}</b></td><td>${esc(o.obra)}</td><td>${esc(o.academia)}</td>
+      <td><span class="est e-${claseEst(o.estado)}">${esc(o.estado)}</span></td>
+      <td style="white-space:nowrap">${D.jurados.map(j => { const r = o.resultados.find(x => x.n === j.n); return `<span class="jb ${!r ? 'no' : r.audioUrl ? 'ok' : 'sa'}" title="${esc(j.nombre)}">J${j.n}</span>`; }).join('')}</td>
+      <td>${o.promedio != null ? nota(o.promedio) : '—'}</td>
+      <td><button class="btn-sm" onclick="irCal(${o.orden})">Corregir</button></td></tr>`).join('') || '<tr><td colspan="7" class="msg">Todo completo ✓</td></tr>'}</table>`;
+
+  $('tab-result').innerHTML = `<table><tr><th>N°</th><th>Obra</th><th>Academia</th><th>Modalidad</th><th>Categoría</th><th>Tipo</th><th class="c">Cant.</th><th class="c">Coreo</th>${D.jurados.map(j => `<th class="c">J${j.n}</th>`).join('')}<th class="c">Prom.</th><th>Puesto</th><th>Puesto coreo</th></tr>
+    ${obras.map(o => `<tr><td><b>${o.orden}</b></td><td>${esc(o.obra)}</td><td>${esc(o.academia)}</td><td>${esc(o.modalidad)}</td><td>${esc(o.categoria)}</td><td>${esc(o.tipoParticipacion)}</td>
+      <td class="c">${(o.participantes || []).length}</td><td class="c">${o.competeCoreografia}</td>
+      ${D.jurados.map(j => { const r = o.resultados.find(x => x.n === j.n); return `<td class="c">${r ? nota(r.puntaje) : '·'}</td>`; }).join('')}
+      <td class="c"><b>${o.promedio != null ? nota(o.promedio) : '—'}</b></td><td>${o.promedio != null ? pillPuesto(o.puesto) : '—'}</td><td>${o.puestoCoreo ? pillPuesto(o.puestoCoreo) : ''}</td></tr>`).join('')}</table>`;
+}
+
+function pdfResultados() {
+  const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  doc.setFillColor(17, 17, 17); doc.rect(0, 0, 297, 20, 'F');
+  doc.setTextColor(212, 165, 55); doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.text('CUP DANCE COMPETITION 2026 — Resultados en orden de baile', 10, 12.5);
+  doc.setFontSize(8); doc.setTextColor(200, 200, 200); doc.text('Generado ' + new Date().toLocaleString('es-PY'), 287, 12.5, { align: 'right' });
+  doc.autoTable({
+    startY: 25, margin: { left: 8, right: 8 },
+    head: [['N°', 'Obra', 'Academia', 'Modalidad', 'Categoría', 'Tipo', 'Coreo'].concat(D.jurados.map(j => 'J' + j.n)).concat(['Prom.', 'Puesto', 'Puesto coreo'])],
+    body: D.obras.map(o => [o.orden, o.obra, o.academia, o.modalidad, o.categoria, o.tipoParticipacion, o.competeCoreografia]
+      .concat(D.jurados.map(j => { const r = o.resultados.find(x => x.n === j.n); return r ? nota(r.puntaje) : ''; }))
+      .concat([o.promedio != null ? nota(o.promedio) : '', o.promedio != null ? o.puesto : '', o.puestoCoreo || ''])),
+    styles: { fontSize: 7.5, cellPadding: 1.6 }, headStyles: { fillColor: [17, 17, 17], textColor: [212, 165, 55] }, alternateRowStyles: { fillColor: [251, 246, 233] }
+  });
+  doc.save('Resultados CDC 2026.pdf');
+}
+
+/* ====== ESCENARIO ====== */
+function pintarEsc() {
+  const q = clave($('esc-q').value), f = $('esc-f').value;
+  const lista = D.obras.filter(o => (!f || o.estado === f) && (!q || clave([o.orden, o.obra, o.academia].join(' ')).includes(q)));
+  $('esc-list').innerHTML = lista.map(o => {
+    const c = claseEst(o.estado);
+    const b = (e, t, k) => `<button class="be ${o.estado === e ? 'on-' + k : ''}" onclick="marcar('${esc(o.idInscripcion)}','${e}')">${t}</button>`;
+    return `<div class="eo ${c}" id="eo-${esc(o.idInscripcion)}"><div class="nro">${o.orden}</div>
+      <div class="inf"><b>${esc(o.obra)}</b><small>${esc(o.academia)} · ${esc(o.modalidad)} · ${esc(o.categoria)} · ${esc(o.tipoParticipacion)}${o.duracion ? ' · ⏱ ' + esc(o.duracion) : ''}</small></div>
+      <span class="est e-${c}">${esc(o.estado)}</span>
+      <div class="bts">${b('En escenario', '🎭 En escenario', 'escena')}${b('Ya bailó', '✅ Ya bailó', 'bailo')}${b('No se presenta', '🚫 No se presenta', 'nose')}${o.estado !== 'En espera' ? `<button class="be" onclick="marcar('${esc(o.idInscripcion)}','En espera')">↩</button>` : ''}</div></div>`;
+  }).join('') || '<div class="msg">Sin obras.</div>';
+}
+async function marcar(id, estado) {
+  const o = D.obras.find(x => x.idInscripcion === id); if (!o) return;
+  const antes = D.obras.map(x => ({ x, e: x.estado, a: x.actualizado }));
+  if (estado === 'En escenario') D.obras.forEach(x => { if (x.estado === 'En escenario') x.estado = 'Ya bailó'; });
+  o.estado = estado; o.actualizado = new Date().toISOString(); pintar();
+  try { await post({ action: 'adminEstado', id, estado }); }
+  catch (e) { antes.forEach(z => { z.x.estado = z.e; z.x.actualizado = z.a; }); pintar(); toast('No se guardó: ' + e.message, 'bad'); }
+}
+function siguiente() {
+  const act = D.obras.findIndex(o => o.estado === 'En escenario');
+  const sig = D.obras.find((o, i) => i > act && o.estado === 'En espera') || D.obras.find(o => o.estado === 'En espera');
+  if (!sig) { toast('No quedan obras en espera'); return; }
+  marcar(sig.idInscripcion, 'En escenario');
+  setTimeout(() => { const el = $('eo-' + sig.idInscripcion); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+}
+
+/* ====== CALIFICACIONES ====== */
+let calObra = null, calEdit = {};
+function irCal(n) { document.querySelector('.tab[data-t=cal]').click(); $('cal-n').value = n; abrirCal(); }
+function abrirCal() {
+  const o = obraPorN($('cal-n').value);
+  if (!o) { $('cal-obra').innerHTML = '<div class="msg">No existe esa obra en el orden.</div>'; return; }
+  calObra = o; calEdit = {};
+  D.jurados.forEach(j => { const r = o.resultados.find(x => x.n === j.n); calEdit[j.n] = { puntaje: r ? r.puntaje : null, coreo: r ? r.coreo : null, premios: new Set(r ? r.premios || [] : []), audioUrl: r ? r.audioUrl : '', existe: !!r, file: null }; });
+  pintarCal();
+}
+function pintarCal() {
+  const o = calObra; if (!o) return;
+  const opt = (v) => '<option value="">—</option>' + [5, 6, 7, 8, 9, 10].map(n => `<option ${Number(v) === n ? 'selected' : ''}>${n}</option>`).join('');
+  $('cal-obra').innerHTML = `<div class="obra-cab"><div class="n gold-text">${o.orden}</div><div><div class="t">${esc(o.obra)}</div>
+      <div class="muted">${esc(o.academia)} · ${esc(o.modalidad)} · ${esc(o.categoria)} · ${esc(o.tipoParticipacion)} · ${o.competeCoreografia === 'Sí' ? '<b style="color:var(--gold-l)">Compite coreografía</b>' : 'No compite coreografía'}</div>
+      <div class="muted">${esc(partsTxt(o))}</div></div>
+      <div style="margin-left:auto;text-align:right">${o.promedio != null ? `<div class="muted">Promedio</div><b style="font-size:1.4rem">${nota(o.promedio)}</b><br>${pillPuesto(o.puesto)}` : ''}</div></div>
+    ${D.jurados.map(j => { const e = calEdit[j.n]; return `<div class="jrow">
+      <div><div class="jn">J${j.n} · ${esc(j.nombre)}</div><span class="jb ${!e.existe ? 'no' : e.audioUrl ? 'ok' : 'sa'}">${!e.existe ? 'Sin cargar' : e.audioUrl ? 'Completo' : 'Sin audio'}</span></div>
+      <div><label>Puntaje</label><select onchange="calEdit[${j.n}].puntaje=this.value?+this.value:null">${opt(e.puntaje)}</select></div>
+      <div>${o.competeCoreografia === 'Sí' ? `<label>Coreografía</label><select onchange="calEdit[${j.n}].coreo=this.value?+this.value:null">${opt(e.coreo)}</select>` : ''}</div>
+      <div><label>Premios postulados</label><div class="chips">${PREMIOS.map((p, i) => `<button class="chip ${e.premios.has(p) ? 'on' : ''}" onclick="togPremio(${j.n},${i})">${esc(p)}</button>`).join('')}</div></div>
+      <div><label>Audio</label>${e.audioUrl ? `<a href="${esc(e.audioUrl)}" target="_blank">🔊 Escuchar</a><br>` : ''}<input type="file" accept="audio/*" onchange="calEdit[${j.n}].file=this.files[0]" style="font-size:.7rem;max-width:210px"/></div>
+      <div style="display:flex;gap:6px;flex-direction:column"><button class="btn-sm verde" onclick="guardarCal(${j.n},this)">💾 Guardar</button>${e.existe ? `<button class="btn-sm rojo" onclick="borrarCal(${j.n})">🗑 Borrar</button>` : ''}</div>
+    </div>`; }).join('')}`;
+}
+function togPremio(n, i) { const s = calEdit[n].premios, p = PREMIOS[i]; s.has(p) ? s.delete(p) : s.add(p); pintarCal(); }
+async function aMp3(file) {
+  if (/\.mp3$/i.test(file.name) || file.type === 'audio/mpeg') return file;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const buf = await new Promise((ok, ko) => file.arrayBuffer().then(ab => ctx.decodeAudioData(ab, ok, ko)));
+  const rate = 22050, off = new OfflineAudioContext(1, Math.ceil(buf.duration * rate), rate);
+  const src = off.createBufferSource(); src.buffer = buf; src.connect(off.destination); src.start();
+  const mono = (await off.startRendering()).getChannelData(0); try { ctx.close(); } catch (e) {}
+  const pcm = new Int16Array(mono.length); for (let i = 0; i < mono.length; i++) { const s = Math.max(-1, Math.min(1, mono[i])); pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF; }
+  const enc = new lamejs.Mp3Encoder(1, rate, 64), out = [];
+  for (let i = 0; i < pcm.length; i += 1152) { const b = enc.encodeBuffer(pcm.subarray(i, i + 1152)); if (b.length) out.push(new Int8Array(b)); }
+  const f = enc.flush(); if (f.length) out.push(new Int8Array(f));
+  return new Blob(out, { type: 'audio/mpeg' });
+}
+function b64(blob) { return new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.readAsDataURL(blob); }); }
+async function guardarCal(n, btn) {
+  const e = calEdit[n], o = calObra;
+  if (!e.puntaje) { toast('Elegí el puntaje', 'bad'); return; }
+  if (o.competeCoreografia === 'Sí' && !e.coreo) { toast('Elegí el puntaje de coreografía', 'bad'); return; }
+  btn.disabled = true; btn.textContent = e.file ? 'Subiendo audio…' : 'Guardando…';
+  try {
+    const p = { action: 'adminGuardarCalif', jurado: n, idInscripcion: o.idInscripcion, ordenNro: o.orden, nombreObra: o.obra, puntaje: e.puntaje, puntajeCoreo: o.competeCoreografia === 'Sí' ? (e.coreo || '') : '', premios: [...e.premios].join('|') };
+    if (e.file) p.audioBase64 = await b64(await aMp3(e.file));
+    await post(p);
+    toast('✓ Guardado J' + n, 'ok');
+    await cargar(); calObra = obraPorN(o.orden); $('cal-n').value = o.orden; abrirCal();
+  } catch (err) { toast('Error: ' + err.message, 'bad'); btn.disabled = false; btn.textContent = '💾 Guardar'; }
+}
+async function borrarCal(n) {
+  if (!confirm('¿Borrar la calificación del Jurado ' + n + ' para esta obra?')) return;
+  try { await post({ action: 'adminBorrarCalif', jurado: n, id: calObra.idInscripcion }); toast('Borrada', 'ok'); await cargar(); abrirCal(); }
+  catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
+function pintarFaltantes() {
+  const nJ = D.jurados.length;
+  const f = D.obras.filter(o => o.estado !== 'No se presenta' && (o.votos < nJ || o.resultados.some(r => !r.audioUrl)));
+  $('cal-falt').innerHTML = f.length ? `<table><tr><th>N°</th><th>Obra</th><th>Escenario</th><th>Falta</th><th></th></tr>
+    ${f.map(o => `<tr><td><b>${o.orden}</b></td><td>${esc(o.obra)}</td><td><span class="est e-${claseEst(o.estado)}">${esc(o.estado)}</span></td>
+      <td>${D.jurados.map(j => { const r = o.resultados.find(x => x.n === j.n); return !r ? `<span class="jb no">J${j.n}</span>` : !r.audioUrl ? `<span class="jb sa" title="sin audio">J${j.n}🔇</span>` : ''; }).join('')}</td>
+      <td><button class="btn-sm" onclick="irCal(${o.orden})">Abrir</button></td></tr>`).join('')}</table>` : '<div class="msg">Todo completo ✓</div>';
+}
+
+/* ====== PREMIOS ====== */
+function pintarPremios() {
+  const sel = $('m-premio'); if (!sel.options.length) sel.innerHTML = PREMIOS.map(p => `<option>${esc(p)}</option>`).join('');
+  $('pre-post').innerHTML = PREMIOS.map((p, i) => {
+    const lista = D.obras.map(o => ({ o, v: o.resultados.filter(r => (r.premios || []).includes(p)).length })).filter(x => x.v).sort((a, b) => b.v - a.v || (b.o.promedio || 0) - (a.o.promedio || 0));
+    const gan = D.ganadores.filter(g => g.premio === p);
+    return `<details class="pgrp" ${lista.length ? 'open' : ''}><summary>${esc(p)} <span class="cnt">(${lista.length} postulada${lista.length === 1 ? '' : 's'})</span>${gan.length ? `<span class="gano">✓ ${gan.length} ganador${gan.length > 1 ? 'es' : ''}</span>` : ''}</summary>
+      <div class="in">${lista.length ? `<table><tr><th class="c">Votos</th><th>N°</th><th>Obra</th><th>Academia</th><th>Prom.</th><th></th></tr>
+        ${lista.map(x => `<tr><td class="c"><b style="color:var(--gold-l)">${x.v}</b></td><td>${x.o.orden}</td><td>${esc(x.o.obra)}<br><span class="muted">${esc(x.o.tipoParticipacion)} · ${esc(partsTxt(x.o)).slice(0, 80)}</span></td><td>${esc(x.o.academia)}</td><td>${x.o.promedio != null ? nota(x.o.promedio) : '—'}</td>
+          <td><button class="btn-sm verde" onclick="modalGanador(${i},${x.o.orden})">🏆 Ganador</button></td></tr>`).join('')}</table>` : '<div class="muted">Ningún jurado postuló obras a este premio.</div>'}</div></details>`;
+  }).join('');
+  $('pre-gan').innerHTML = D.ganadores.length ? D.ganadores.map((g, i) => `<div class="sw"><div><b style="color:var(--gold-l)">${esc(g.premio)}</b><small>${esc(g.ganador || '(sin nombre)')}${g.obra ? ' · N° ' + esc(g.nro) + ' ' + esc(g.obra) : ''}${g.academia ? ' · ' + esc(g.academia) : ''}</small></div>
+    <div style="display:flex;gap:6px"><button class="btn-sm" onclick="modalCert(${i})">🎓 Certificado</button><button class="btn-sm rojo" onclick="borrarGanador(${i})">🗑</button></div></div>`).join('') : '<div class="msg">Todavía no hay ganadores.</div>';
+}
+function modal(html) { cerrarModal(); const m = document.createElement('div'); m.className = 'modal'; m.id = 'modal'; m.innerHTML = '<div class="box">' + html + '</div>'; m.onclick = e => { if (e.target === m) cerrarModal(); }; document.body.appendChild(m); }
+function cerrarModal() { const m = $('modal'); if (m) m.remove(); }
+function modalGanador(i, n) {
+  const o = obraPorN(n), parts = o.participantes || [];
+  const sugerido = parts.length === 1 ? parts[0] : /Coreó/.test(PREMIOS[i]) ? (o.coreografo || '') : /Academia/.test(PREMIOS[i]) ? o.academia : /Maestro/.test(PREMIOS[i]) ? (o.maestro || '') : /Grupo|Dúo/.test(PREMIOS[i]) ? o.obra + ' — ' + o.academia : '';
+  modal(`<h3>🏆 ${esc(PREMIOS[i])}</h3><div class="muted">N° ${o.orden} · ${esc(o.obra)} · ${esc(o.academia)}</div>
+    <label>Nombre que va en el certificado</label>
+    ${parts.length > 1 ? `<select onchange="$('g-nom').value=this.value"><option value="">— Elegir intérprete —</option>${parts.map(p => `<option>${esc(p)}</option>`).join('')}</select>` : ''}
+    <input type="text" id="g-nom" value="${esc(sugerido)}"/>
+    <label>Notas (opcional)</label><input type="text" id="g-notas"/>
+    <div class="acc"><button class="btn-line" onclick="cerrarModal()">Cancelar</button><button class="btn" onclick="registrarGanador('${esc(PREMIOS[i])}',${o.orden})">Registrar</button></div>`);
+}
+async function registrarGanador(premio, n) {
+  const o = n ? obraPorN(n) : null;
+  const ganador = (($('g-nom') || {}).value || '').trim(); if (!ganador) { toast('Escribí el nombre', 'bad'); return; }
+  try {
+    await post({ action: 'adminGanador', premio, nro: o ? o.orden : '', id: o ? o.idInscripcion : '', obra: o ? o.obra : '', academia: o ? o.academia : '', ganador, notas: ($('g-notas') || {}).value || '' });
+    cerrarModal(); toast('✓ Ganador registrado', 'ok'); await cargar();
+  } catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
+async function ganadorManual() {
+  const premio = $('m-premio').value, n = $('m-nro').value, ganador = $('m-ganador').value.trim();
+  const o = n ? obraPorN(n) : null;
+  if (n && !o) { toast('No existe la obra N° ' + n, 'bad'); return; }
+  if (!ganador) { toast('Escribí el nombre del ganador', 'bad'); return; }
+  try {
+    await post({ action: 'adminGanador', premio, nro: o ? o.orden : '', id: o ? o.idInscripcion : '', obra: o ? o.obra : '', academia: o ? o.academia : '', ganador, notas: $('m-notas').value });
+    $('m-nro').value = $('m-ganador').value = $('m-notas').value = ''; toast('✓ Ganador registrado', 'ok'); await cargar();
+  } catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
+async function borrarGanador(i) {
+  const g = D.ganadores[i]; if (!confirm('¿Borrar ' + g.premio + ' — ' + g.ganador + '?')) return;
+  try { await post({ action: 'adminBorrarGanador', fila: g.fila, premio: g.premio }); toast('Borrado', 'ok'); await cargar(); } catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
+function detalleGanador(g) { return g.obra ? 'Obra N° ' + g.nro + ' “' + g.obra + '”' + (g.academia ? ' — ' + g.academia : '') : (g.academia || ''); }
+function modalCert(i) {
+  const g = D.ganadores[i];
+  modal(`<h3>🎓 Certificado</h3>
+    <label>Premio</label><input type="text" id="c-premio" value="${esc(g.premio)}"/>
+    <label>Nombre</label><input type="text" id="c-nom" value="${esc(g.ganador)}"/>
+    <label>Línea chica (obra / academia)</label><input type="text" id="c-det" value="${esc(detalleGanador(g))}"/>
+    <div class="acc"><button class="btn-line" onclick="cerrarModal()">Cancelar</button><button class="btn" onclick="bajarCert()">⬇ Descargar PDF</button></div>`);
+}
+async function bajarCert() {
+  try {
+    const d = { premio: $('c-premio').value, nombre: $('c-nom').value, detalle: $('c-det').value };
+    const doc = await CDCPDF.certificado(d, { fondo: '../certificado-premio.jpg' });
+    doc.save(('Certificado ' + d.premio + ' - ' + d.nombre).replace(/[\\/:*?"<>|]/g, '') + '.pdf'); cerrarModal();
+  } catch (e) { toast('No se pudo generar: ' + e.message, 'bad'); }
+}
+async function todosCertificados() {
+  if (!D.ganadores.length) { toast('No hay ganadores'); return; }
+  let doc = null;
+  for (const g of D.ganadores) doc = await CDCPDF.certificado({ premio: g.premio, nombre: g.ganador, detalle: detalleGanador(g) }, { fondo: '../certificado-premio.jpg', doc });
+  doc.save('Certificados Premios Especiales CDC 2026.pdf');
+}
+function pdfGanadores() {
+  const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  doc.setFillColor(17, 17, 17); doc.rect(0, 0, 210, 20, 'F'); doc.setTextColor(212, 165, 55); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text('CUP DANCE COMPETITION 2026 — Premios especiales', 10, 12.5);
+  doc.autoTable({ startY: 26, head: [['Premio', 'Ganador/a', 'N°', 'Obra', 'Academia']], body: D.ganadores.map(g => [g.premio, g.ganador, g.nro, g.obra, g.academia]),
+    styles: { fontSize: 9 }, headStyles: { fillColor: [17, 17, 17], textColor: [212, 165, 55] }, alternateRowStyles: { fillColor: [251, 246, 233] } });
+  doc.save('Ganadores premios especiales CDC 2026.pdf');
+}
+
+/* ====== DEVOLUCIONES ====== */
+const SWITCHES = [
+  ['portal_devoluciones', 'Portal de devoluciones abierto', 'Las academias pueden entrar y ver sus puntajes.'],
+  ['mostrar_audios', 'Mostrar audios del jurado', 'Si lo apagás, el portal oculta todos los audios.'],
+  ['mostrar_pdf', 'Permitir descargar el PDF', 'Botón “Descargar PDF de devolución” en el portal.'],
+  ['en_vivo_publicado', 'Página “En vivo” pública', 'Muestra el orden y qué obra está en escenario.']
+];
+function pintarDev() {
+  $('switches').innerHTML = SWITCHES.map(s => `<div class="sw"><div><b>${s[1]}</b><small>${s[2]}</small></div><button class="tog ${D.config[s[0]] === 'SI' ? 'on' : ''}" onclick="togConfig('${s[0]}')"></button></div>`).join('');
+  const sel = $('pdf-acad'), v = sel.value;
+  const acs = [...new Set(D.obras.map(o => o.academia).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = '<option value="">Todas las academias</option>' + acs.map(a => `<option ${a === v ? 'selected' : ''}>${esc(a)}</option>`).join('');
+  pintarAccesos();
+}
+async function togConfig(k) {
+  const nuevo = D.config[k] === 'SI' ? 'NO' : 'SI';
+  if (k === 'portal_devoluciones' && nuevo === 'SI' && !confirm('¿Abrir el portal? Las academias van a poder ver sus puntajes.')) return;
+  D.config[k] = nuevo; pintarDev();
+  try { await post({ action: 'adminConfig', clave2: k, valor: nuevo }); toast('✓ Guardado', 'ok'); }
+  catch (e) { D.config[k] = nuevo === 'SI' ? 'NO' : 'SI'; pintarDev(); toast('Error: ' + e.message, 'bad'); }
+}
+function obraPdf(o) { return Object.assign({}, o, { resultados: o.resultados.map(r => ({ jurado: r.jurado, puntaje: r.puntaje, puesto: r.puesto, coreo: r.coreo, puestoCoreo: r.puestoCoreo })) }); }
+async function pdfUna() {
+  const o = obraPorN($('pdf-n').value); if (!o) { toast('No existe esa obra', 'bad'); return; }
+  const doc = await CDCPDF.devolucion(obraPdf(o), { logo: '../logo.png' }); doc.save(CDCPDF.nombreArchivo(o));
+}
+async function pdfDevolucionesLote() {
+  const a = $('pdf-acad').value;
+  const obras = D.obras.filter(o => !a || o.academia === a);
+  if (!obras.length) return;
+  let doc = null;
+  for (let i = 0; i < obras.length; i++) {
+    $('pdf-prog').textContent = 'Armando ' + (i + 1) + ' de ' + obras.length + '…';
+    doc = await CDCPDF.devolucion(obraPdf(obras[i]), { logo: '../logo.png', doc });
+    if (i % 10 === 9) await new Promise(r => setTimeout(r, 0));
+  }
+  doc.save('Devoluciones CDC 2026' + (a ? ' - ' + a.replace(/[\\/:*?"<>|]/g, '') : '') + '.pdf');
+  $('pdf-prog').textContent = '✓ Listo (' + obras.length + ' obras)';
+}
+function telWa(t) { let d = String(t || '').replace(/\D/g, ''); if (!d) return ''; if (d.startsWith('595')) return d; if (d.startsWith('0')) d = d.slice(1); return '595' + d; }
+function pintarAccesos() {
+  const q = clave($('acc-q').value);
+  const cnt = {}; D.obras.forEach(o => { const k = clave(o.academia); cnt[k] = (cnt[k] || 0) + 1; });
+  const l = D.accesos.filter(a => !q || clave(a.academia).includes(q));
+  window._msgs = [];
+  $('tab-acc').innerHTML = `<table><tr><th>Academia</th><th class="c">Obras</th><th>PIN</th><th>Teléfono</th><th></th></tr>
+    ${l.map(a => { const msg = `Hola, ${a.academia}! 👋\nYa están disponibles las devoluciones del jurado de *CUP Dance Competition 2026* 🏆\n\nIngresá acá: ${PORTAL_URL}\nAcademia: ${a.academia}\nPIN: *${a.pin}*\n\nVas a ver los puntajes, los audios de cada jurado y el PDF de devolución de cada obra.`;
+      const w = telWa(a.telefono); const ix = D.accesos.indexOf(a); window._msgs[ix] = msg;
+      return `<tr><td><b>${esc(a.academia)}</b>${a.director ? `<br><span class="muted">${esc(a.director)}</span>` : ''}</td><td class="c">${cnt[clave(a.academia)] || 0}</td>
+      <td><b style="font-family:monospace;font-size:.95rem;color:var(--gold-l)">${esc(a.pin)}</b> <button class="btn-sm" onclick="cambiarPin(${ix})">✏️</button></td>
+      <td>${esc(a.telefono)}</td>
+      <td style="white-space:nowrap"><a class="btn-sm verde" style="text-decoration:none" target="_blank" href="https://wa.me/${w}?text=${encodeURIComponent(msg)}">WhatsApp</a>
+        <button class="btn-sm" onclick="copiar(_msgs[${ix}])">📋 Copiar</button>
+        <button class="btn-sm" onclick="pdfAcademia(${ix})">PDF</button></td></tr>`; }).join('')}</table>`;
+}
+function copiar(t) { navigator.clipboard.writeText(t).then(() => toast('Copiado', 'ok')); }
+function pdfAcademia(i) { const a = D.accesos[i].academia; const op = [...$('pdf-acad').options].find(x => clave(x.value) === clave(a)); if (!op) { toast('Esa academia no tiene obras', 'bad'); return; } $('pdf-acad').value = op.value; pdfDevolucionesLote(); }
+async function cambiarPin(i) {
+  const a = D.accesos[i].academia;
+  const pin = prompt('Nuevo PIN para ' + a + ' (4 a 10 letras o números):'); if (!pin) return;
+  try { await post({ action: 'adminPin', academia: a, pin }); toast('✓ PIN cambiado', 'ok'); await cargar(); } catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
+async function sincPins() {
+  try { const r = await post({ action: 'adminSincronizarPins' }); toast(r.nuevas ? '✓ ' + r.nuevas + ' academias nuevas' : 'No había academias nuevas', 'ok'); await cargar(true); } catch (e) { toast('Error: ' + e.message, 'bad'); }
+}
+
+/* ====== INICIO ====== */
+if (JURADO_URL.indexOf('PEGAR') === 0) { $('login').classList.remove('hidden'); $('login-err').textContent = 'Falta configurar JURADO_URL'; }
+else { const g = sg(SS); if (g) entrar(g); else $('login').classList.remove('hidden'); }
+</script>
+</body>
+</html>
