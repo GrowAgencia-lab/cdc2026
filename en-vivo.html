@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>En vivo — CUP Dance Competition 2026</title>
+<meta name="description" content="Seguí en vivo el orden de la CUP Dance Competition 2026, sede Gran Asunción."/>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="CDC En vivo"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="icon" href="logo.png"/>
+<link rel="apple-touch-icon" href="logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;--gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;--ok:#4ADE80;--err:#F87171;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);--disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif}
+html,body{background:var(--bg)}
+body{color:var(--txt);font-family:var(--body);font-size:15px;line-height:1.45;min-height:100vh;padding:14px 14px calc(24px + env(safe-area-inset-bottom));
+  background-image:radial-gradient(ellipse at 50% -10%,rgba(212,165,55,.18),transparent 60%)}
+.wrap{max-width:640px;margin:0 auto;display:grid;gap:12px}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.header{background:#000;border:1px solid var(--line2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.header img{width:52px;height:52px;filter:drop-shadow(0 4px 14px rgba(212,165,55,.4))}
+.header h1{font-family:var(--disp);font-size:1.25rem;text-transform:uppercase;letter-spacing:.5px;line-height:1.1}
+.header p{color:var(--txt2);font-size:.74rem;display:flex;align-items:center;gap:6px}
+.vivo-dot{width:8px;height:8px;border-radius:50%;background:#E5484D;animation:p 1.3s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--txt2)}
+.actual{background:linear-gradient(135deg,#2A1F08,#000 70%);border:1.5px solid var(--gold);border-radius:18px;padding:18px;box-shadow:0 10px 34px rgba(212,165,55,.18)}
+.actual .et{font-size:.72rem;text-transform:uppercase;letter-spacing:1.4px;color:var(--gold);font-weight:800;display:flex;align-items:center;gap:6px}
+.actual .nro{font-family:var(--disp);font-size:3.2rem;line-height:1;margin-top:8px}
+.actual .tit{font-family:var(--disp);font-size:1.6rem;text-transform:uppercase;line-height:1.1;margin-top:4px}
+.actual .ac{color:var(--gold-l);font-weight:700;margin-top:4px}
+.actual .meta{color:var(--txt2);font-size:.8rem;margin-top:6px}
+.prog{display:flex;align-items:center;gap:10px;font-size:.78rem;color:var(--txt2)}
+.prog .b{flex:1;height:6px;border-radius:9px;background:var(--bg2);overflow:hidden}.prog .b i{display:block;height:100%;background:var(--grad)}
+.st{font-family:var(--disp);font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold-l);margin-top:6px}
+.fila{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.fila .n{font-family:var(--disp);font-size:1.15rem;color:var(--gold-l);min-width:36px;text-align:center}
+.fila .i{flex:1;min-width:0}
+.fila .i b{display:block;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fila .i small{color:var(--muted);font-size:.74rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fila.prox{border-color:var(--gold-d)}
+.fila.hecha{opacity:.5}
+.fila.nose{opacity:.5}.fila.nose b{text-decoration:line-through}
+.tag{font-size:.64rem;font-weight:800;padding:.15rem .5rem;border-radius:20px;white-space:nowrap}
+.t-prox{background:var(--grad);color:#1A1306}.t-nose{background:rgba(248,113,113,.14);color:var(--err)}
+.lista{display:grid;gap:6px}
+.mas{background:none;border:1.5px solid var(--line2);color:var(--gold-l);border-radius:10px;padding:.6rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%}
+.buscar{width:100%;padding:.7rem .9rem;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:.9rem;font-family:inherit}
+.buscar:focus{outline:none;border-color:var(--gold)}
+.pie{text-align:center;color:var(--muted);font-size:.74rem;line-height:1.6;margin-top:8px}
+.pie a{color:var(--gold-l);text-decoration:none;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <img src="logo.png" alt="CUP Dance Competition"/>
+    <div><h1><span class="gold-text">Competencia en vivo</span></h1><p><span class="vivo-dot"></span>CUP Dance Competition 2026 · Gran Asunción</p></div>
+  </div>
+  <div id="contenido"><div class="box">Cargando…</div></div>
+  <div class="pie">Se actualiza sola cada pocos segundos. El orden puede cambiar a último momento.<br>
+    <a href="https://instagram.com/cupdancecompetition" target="_blank" rel="noopener">@cupdancecompetition</a></div>
+</div>
+<script>
+const JURADO_URL = 'https://script.google.com/macros/s/AKfycbzEzVg-Vj7TDHwG3441kbkd8UKIrRwnpdiTVGGKZQtQob3xv5gWs9Qc9N6T8Tmp9O274A/exec';
+const REFRESCO = 10000, PROXIMAS = 8;
+let DATA = null, verTodas = false, busy = false, q = '';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+async function cargar() {
+  if (busy) return; busy = true;
+  try {
+    const r = await fetch(JURADO_URL + '?action=ordenEnVivo&_=' + Date.now(), { cache: 'no-store' });
+    const j = await r.json(); if (j.ok) { DATA = j; pintar(); }
+  } catch (e) { if (!DATA) document.getElementById('contenido').innerHTML = '<div class="box">No se pudo conectar. Reintentando…</div>'; }
+  finally { busy = false; }
+}
+function fila(o, extra) {
+  const c = o.estado === 'Ya bailó' ? 'hecha' : o.estado === 'No se presenta' ? 'nose' : extra || '';
+  return `<div class="fila ${c}"><div class="n">${o.posicion}</div><div class="i"><b>${esc(o.obra)}</b><small>${esc(o.academia)} · ${esc(o.categoria)} · ${esc(o.tipoParticipacion)}</small></div>
+    ${extra === 'prox' ? '<span class="tag t-prox">Próxima</span>' : ''}${o.estado === 'No se presenta' ? '<span class="tag t-nose">No se presentó</span>' : ''}</div>`;
+}
+function pintar() {
+  const c = document.getElementById('contenido');
+  if (!DATA.publicado) { c.innerHTML = '<div class="box">El orden en vivo todavía no está publicado. ¡Volvé a mirar en un rato!</div>'; return; }
+  const obras = DATA.obras;
+  if (!obras.length) { c.innerHTML = '<div class="box">Todavía no hay orden cargado.</div>'; return; }
+  const act = obras.find(o => o.estado === 'En escenario');
+  const pasaron = obras.filter(o => o.estado === 'Ya bailó' || o.estado === 'No se presenta');
+  const pend = obras.filter(o => o.estado === 'En espera');
+  let h = '';
+  h += act ? `<div class="actual"><div class="et"><span class="vivo-dot"></span> En escenario ahora</div><div class="nro gold-text">N° ${act.posicion}</div>
+      <div class="tit">${esc(act.obra)}</div><div class="ac">${esc(act.academia)}</div><div class="meta">${esc(act.modalidad)} · ${esc(act.categoria)} · ${esc(act.tipoParticipacion)}</div></div>`
+    : `<div class="box">${pasaron.length ? 'Pausa entre obras…' : 'La competencia todavía no empezó.'}</div>`;
+  h += `<div class="prog"><span>${pasaron.length} / ${obras.length} obras</span><span class="b"><i style="width:${pasaron.length / obras.length * 100}%"></i></span></div>`;
+  h += `<input class="buscar" placeholder="🔍 Buscá tu obra o academia" value="${esc(q)}" oninput="q=this.value;pintarLista()"/>`;
+  h += '<div id="lista"></div>';
+  c.innerHTML = h;
+  pintarLista();
+}
+function pintarLista() {
+  const obras = DATA.obras, pend = obras.filter(o => o.estado === 'En espera');
+  const pasaron = obras.filter(o => o.estado === 'Ya bailó' || o.estado === 'No se presenta');
+  let h = '';
+  if (q.trim()) {
+    const t = norm(q);
+    const r = obras.filter(o => norm(o.posicion + ' ' + o.obra + ' ' + o.academia).includes(t));
+    h = `<div class="st">Resultados (${r.length})</div><div class="lista">${r.map(o => fila(o, o.estado === 'En escenario' ? 'prox' : '')).join('') || '<div class="box">Sin resultados</div>'}</div>`;
+  } else {
+    if (pend.length) {
+      const ver = verTodas ? pend : pend.slice(0, PROXIMAS);
+      h += `<div class="st">Siguen en el orden</div><div class="lista">${ver.map((o, i) => fila(o, i === 0 ? 'prox' : '')).join('')}</div>`;
+      if (!verTodas && pend.length > PROXIMAS) h += `<button class="mas" style="margin-top:6px" onclick="verTodas=true;pintarLista()">Ver las ${pend.length - PROXIMAS} restantes ↓</button>`;
+    }
+    if (pasaron.length) h += `<div class="st" style="margin-top:12px">Ya se presentaron (${pasaron.length})</div><div class="lista">${pasaron.slice().reverse().map(o => fila(o)).join('')}</div>`;
+  }
+  document.getElementById('lista').innerHTML = h;
+}
+cargar();
+setInterval(() => { if (!document.hidden && document.activeElement?.className !== 'buscar') cargar(); }, REFRESCO);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(); });
+</script>
+</body>
+</html>
