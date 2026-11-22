@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>QR del Jurado — CUP Dance Competition 2026</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="icon" href="../logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0B0A08;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;--gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);--disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14px;min-height:100vh;padding:16px;background-image:radial-gradient(ellipse at 50% -10%,rgba(212,165,55,.16),transparent 60%)}
+.wrap{max-width:920px;margin:0 auto;display:grid;gap:14px}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.header{background:#000;border:1px solid var(--line2);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;flex-wrap:wrap}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.header img{width:54px;height:54px}
+.header h1{font-family:var(--disp);font-size:1.35rem;text-transform:uppercase;letter-spacing:.5px}
+.header p{color:var(--txt2);font-size:.78rem}
+.acc{margin-left:auto;display:flex;gap:8px}
+.acc a,.acc button{color:var(--gold-l);text-decoration:none;font-weight:700;font-size:.8rem;border:1.5px solid var(--line2);padding:.45rem .8rem;border-radius:10px;background:none;font-family:inherit;cursor:pointer}
+.info{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--txt2);line-height:1.6}
+.info b{color:var(--txt)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.qr{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:16px;text-align:center;display:grid;gap:10px;justify-items:center}
+.qr .n{font-family:var(--disp);font-size:.8rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.qr .nom{font-family:var(--disp);font-size:1.25rem;text-transform:uppercase;line-height:1.1}
+.qr .code{background:#fff;padding:12px;border-radius:12px}
+.qr .code img,.qr .code canvas{display:block;width:170px;height:170px}
+.qr .link{font-size:.66rem;color:var(--muted);word-break:break-all}
+.qr .bts{display:flex;gap:6px}
+.qr .bts button{background:none;border:1px solid var(--line);color:var(--txt2);border-radius:8px;padding:.35rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .header,.info,.bts{display:none!important}
+  .grid{grid-template-columns:1fr 1fr;gap:24px}
+  .qr{background:#fff;border:2px solid #000;break-inside:avoid;padding:24px}
+  .qr .n,.qr .link{color:#444}
+  .qr .nom{color:#000}
+  .qr .code img,.qr .code canvas{width:220px;height:220px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <img src="../logo.png" alt=""/>
+    <div><h1><span class="gold-text">QR del Jurado</span></h1><p>Cada jurado escanea su código y su celular queda con su perfil.</p></div>
+    <div class="acc"><button onclick="window.print()">🖨 Imprimir</button><a href="./">‹ Admin</a></div>
+  </div>
+  <div class="info">
+    <b>Cómo se usa:</b> el jurado escanea <b>su</b> QR con la cámara → se abre el portal ya con su nombre.
+    Para dejarlo en el celular: en iPhone tocá <b>Compartir → Agregar a pantalla de inicio</b>; en Android, menú <b>⋮ → Agregar a pantalla principal</b>.
+    Los nombres salen de la hoja <b>Jurados</b> de la planilla del jurado (si todavía dicen “Jurado 1…4”, cambialos ahí y recargá esta página).
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+const JURADO_URL = 'https://script.google.com/macros/s/AKfycbzEzVg-Vj7TDHwG3441kbkd8UKIrRwnpdiTVGGKZQtQob3xv5gWs9Qc9N6T8Tmp9O274A/exec';   // misma URL que en jurado.html
+const PORTAL = new URL('../jurado.html', location.href).href;
+
+async function init() {
+  let jurados = [1, 2, 3, 4].map(n => ({ n, nombre: 'Jurado ' + n }));
+  if (JURADO_URL.indexOf('PEGAR') !== 0) {
+    try { const r = await (await fetch(JURADO_URL + '?action=jurados')).json(); if (r.ok && r.jurados.length) jurados = r.jurados; } catch (e) {}
+  }
+  const items = jurados.map(j => ({ titulo: 'Jurado ' + j.n, nombre: j.nombre, url: PORTAL + '?j=' + j.n }));
+  items.push({ titulo: 'General', nombre: 'Elegir perfil', url: PORTAL });
+  const g = document.getElementById('grid');
+  g.innerHTML = items.map((it, i) => `<div class="qr"><div class="n">${it.titulo}</div><div class="nom gold-text">${it.nombre.replace(/</g, '&lt;')}</div>
+    <div class="code" id="qr${i}"></div><div class="link">${it.url}</div>
+    <div class="bts"><button onclick="bajar(${i},'${it.nombre.replace(/'/g, '')}')">⬇ PNG</button><button onclick="copiar('${it.url}')">🔗 Copiar link</button></div></div>`).join('');
+  items.forEach((it, i) => new QRCode(document.getElementById('qr' + i), { text: it.url, width: 340, height: 340, correctLevel: QRCode.CorrectLevel.M }));
+}
+function bajar(i, nombre) {
+  const c = document.querySelector('#qr' + i + ' canvas');
+  const a = document.createElement('a'); a.download = 'QR ' + nombre + '.png'; a.href = c.toDataURL('image/png'); a.click();
+}
+function copiar(u) { navigator.clipboard.writeText(u).then(() => alert('Link copiado')); }
+init();
+</script>
+</body>
+</html>
