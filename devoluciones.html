@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Portal de Devoluciones — CUP Dance Competition 2026</title>
+<meta name="robots" content="noindex,nofollow"/>
+<meta name="theme-color" content="#000000"/>
+<link rel="icon" href="logo.png"/>
+<link rel="apple-touch-icon" href="logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="devolucion-pdf.js?v=1"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;--gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;--ok:#4ADE80;--err:#F87171;
+  --oro:#F5D77A;--plata:#D6D3CE;--bronce:#D08A4E;
+  --grad:linear-gradient(135deg,#8C6418 0%,#D4A537 30%,#F5D77A 50%,#D4A537 70%,#8C6418 100%);--disp:'Oswald','Arial Narrow',Arial,sans-serif;--body:'Montserrat',system-ui,sans-serif}
+html,body{background:var(--bg)}
+body{color:var(--txt);font-family:var(--body);font-size:15px;line-height:1.45;min-height:100vh;padding:14px 14px calc(24px + env(safe-area-inset-bottom));
+  background-image:radial-gradient(ellipse at 50% -10%,rgba(212,165,55,.18),transparent 60%)}
+.wrap{max-width:680px;margin:0 auto;display:grid;gap:12px}
+.gold-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hidden{display:none!important}
+button,input{font-family:inherit}
+.header{background:#000;border:1px solid var(--line2);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.header img{width:52px;height:52px;filter:drop-shadow(0 4px 14px rgba(212,165,55,.4))}
+.header h1{font-family:var(--disp);font-size:1.2rem;text-transform:uppercase;letter-spacing:.5px;line-height:1.1}
+.header p{color:var(--txt2);font-size:.74rem}
+.header .salir{margin-left:auto;background:none;border:1.5px solid var(--line2);color:var(--gold-l);border-radius:10px;padding:.4rem .7rem;font-weight:700;font-size:.75rem;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.login{display:grid;gap:10px}
+.login h2{font-family:var(--disp);text-transform:uppercase;color:var(--gold-l);font-size:1.1rem;text-align:center}
+.login p{color:var(--txt2);font-size:.82rem;text-align:center}
+.login label{font-size:.7rem;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;font-weight:800;margin-top:4px}
+.login input{padding:.8rem;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);color:var(--txt);font-size:1rem}
+.login input:focus{outline:none;border-color:var(--gold)}
+.btn{border:none;border-radius:12px;padding:.85rem 1rem;font-weight:800;font-size:.95rem;background:var(--grad);color:#1A1306;cursor:pointer;width:100%}
+.btn:disabled{opacity:.55}
+.err{color:var(--err);font-size:.82rem;text-align:center;min-height:1.1em}
+.ayuda{color:var(--muted);font-size:.75rem;text-align:center;line-height:1.5}
+.ayuda a,.contacto a{color:var(--gold-l);font-weight:700;text-decoration:none}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--txt2)}
+.resumen{display:flex;gap:8px;flex-wrap:wrap}
+.resumen .r{flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.resumen .r b{font-family:var(--disp);font-size:1.6rem;display:block;line-height:1}
+.resumen .r span{font-size:.66rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px}
+.obra{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.obra .top{display:flex;gap:12px;padding:14px;align-items:flex-start;border-bottom:1px solid var(--line)}
+.obra .n{font-family:var(--disp);font-size:2rem;line-height:1;min-width:50px;text-align:center}
+.obra .n small{display:block;font-size:.55rem;color:var(--muted);font-family:var(--body);letter-spacing:1px}
+.obra .t{font-family:var(--disp);font-size:1.2rem;text-transform:uppercase;line-height:1.15}
+.obra .m{color:var(--txt2);font-size:.76rem;margin-top:3px}
+.obra .p{color:var(--muted);font-size:.72rem;margin-top:3px}
+.jur{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.jur .jn{font-weight:700;font-size:.86rem}
+.jur .pt{font-family:var(--disp);font-size:1.25rem;text-align:right}
+.jur .det{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.75rem;color:var(--txt2)}
+.jur audio{width:100%;height:36px;grid-column:1/-1}
+.pill{display:inline-block;font-size:.68rem;font-weight:800;padding:.12rem .55rem;border-radius:20px;white-space:nowrap}
+.p1{background:rgba(245,215,122,.15);color:var(--oro)}.p2{background:rgba(214,211,206,.13);color:var(--plata)}.p3{background:rgba(208,138,78,.15);color:var(--bronce)}.p0{background:var(--bg2);color:var(--muted)}
+.final{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;background:linear-gradient(135deg,#2A1F08,#000);flex-wrap:wrap}
+.final .e{font-size:.65rem;color:var(--gold);text-transform:uppercase;letter-spacing:1.2px;font-weight:800}
+.final .v{font-family:var(--disp);font-size:1.5rem}
+.final .pu{font-family:var(--disp);font-size:1.3rem;text-transform:uppercase}
+.premio{margin:0 14px 12px;background:rgba(212,165,55,.1);border:1px solid var(--gold-d);color:var(--gold-l);border-radius:10px;padding:8px 10px;font-size:.8rem;font-weight:700}
+.acc{padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap}
+.btn-pdf{border:none;border-radius:10px;padding:.65rem 1rem;font-weight:800;font-size:.84rem;background:var(--grad);color:#1A1306;cursor:pointer}
+.sin{padding:12px 14px;color:var(--muted);font-size:.82rem}
+.contacto{text-align:center;color:var(--muted);font-size:.78rem;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <img src="logo.png" alt="CUP Dance Competition"/>
+    <div><h1><span class="gold-text">Portal de Devoluciones</span></h1><p id="sub">CUP Dance Competition 2026 · Gran Asunción</p></div>
+    <button class="salir hidden" id="salir" onclick="salir()">Salir</button>
+  </div>
+
+  <div class="card login" id="login">
+    <h2>Ingresá con tu academia</h2>
+    <p>Puntajes, audios del jurado y PDF de devolución de cada obra.</p>
+    <label for="academia">Academia</label>
+    <input id="academia" list="lista-acad" placeholder="Escribí el nombre de tu academia" autocomplete="off"/>
+    <datalist id="lista-acad"></datalist>
+    <label for="pin">PIN</label>
+    <input id="pin" placeholder="Ej: AB1234" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px" onkeydown="if(event.key==='Enter')entrar()"/>
+    <button class="btn" id="btn-entrar" onclick="entrar()">Ingresar</button>
+    <div class="err" id="err"></div>
+    <div class="ayuda">El PIN te lo envió la organización por WhatsApp. ¿No lo tenés?<br>Escribinos a <a href="https://wa.me/595971588475" target="_blank" rel="noopener">Prof. Francisco González (0971) 588 475</a></div>
+  </div>
+
+  <div id="app" class="hidden" style="display:grid;gap:12px"></div>
+
+  <div class="contacto">¿Dudas sobre tus resultados? <a href="https://wa.me/595971588475" target="_blank" rel="noopener">(0971) 588 475</a> · <a href="https://wa.me/595994281511" target="_blank" rel="noopener">(0994) 281 511</a><br>
+    <a href="https://instagram.com/cupdancecompetition" target="_blank" rel="noopener">@cupdancecompetition</a></div>
+</div>
+<script>
+const JURADO_URL = 'https://script.google.com/macros/s/AKfycbzEzVg-Vj7TDHwG3441kbkd8UKIrRwnpdiTVGGKZQtQob3xv5gWs9Qc9N6T8Tmp9O274A/exec';
+const SS = 'cdc_dev';
+let SES = null, DATA = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nota = n => n == null || n === '' ? '—' : String(n).replace('.', ',');
+function pill(p) { const c = /^1/.test(p) ? 'p1' : /^2/.test(p) ? 'p2' : /^3/.test(p) ? 'p3' : 'p0'; const ic = /^1/.test(p) ? '🥇 ' : /^2/.test(p) ? '🥈 ' : /^3/.test(p) ? '🥉 ' : ''; return `<span class="pill ${c}">${ic}${esc(p || 'Pendiente')}</span>`; }
+async function api(p) { const r = await fetch(JURADO_URL + '?' + new URLSearchParams(p), { cache: 'no-store' }); return r.json(); }
+// Link de Drive → reproductor directo
+function audioSrc(u) { const m = /\/d\/([\w-]+)/.exec(u || '') || /id=([\w-]+)/.exec(u || ''); return m ? 'https://drive.google.com/uc?export=download&id=' + m[1] : u; }
+
+(async () => { try { const j = await api({ action: 'devAcademias' }); if (j.ok) $('lista-acad').innerHTML = j.academias.map(a => `<option value="${esc(a)}">`).join(''); } catch (e) {} })();
+
+async function entrar(guardada) {
+  const academia = guardada ? guardada.academia : $('academia').value.trim();
+  const pin = guardada ? guardada.pin : $('pin').value.trim().toUpperCase();
+  if (!academia || !pin) { $('err').textContent = 'Completá la academia y el PIN.'; return; }
+  $('btn-entrar').disabled = true; $('btn-entrar').textContent = 'Verificando…'; $('err').textContent = '';
+  try {
+    const j = await api({ action: 'devLogin', academia, pin });
+    if (!j.ok) throw new Error(j.error);
+    SES = { academia: j.nombre, pin };
+    try { sessionStorage.setItem(SS, JSON.stringify(SES)); } catch (e) {}
+    $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('salir').classList.remove('hidden');
+    $('sub').textContent = j.nombre;
+    cargar();
+  } catch (e) {
+    $('err').textContent = /incorrect/i.test(e.message) ? 'Academia o PIN incorrectos.' : 'Error de conexión. Probá de nuevo.';
+    try { sessionStorage.removeItem(SS); } catch (x) {}
+  } finally { $('btn-entrar').disabled = false; $('btn-entrar').textContent = 'Ingresar'; }
+}
+function salir() { try { sessionStorage.removeItem(SS); } catch (e) {} location.reload(); }
+
+async function cargar() {
+  $('app').innerHTML = '<div class="box">Cargando tus resultados…</div>';
+  try {
+    const j = await api({ action: 'devResultados', academia: SES.academia, pin: SES.pin });
+    if (!j.ok) throw new Error(j.error);
+    DATA = j; pintar();
+  } catch (e) { $('app').innerHTML = '<div class="box">❌ ' + esc(e.message) + '<br><br><button class="btn-pdf" onclick="cargar()">Reintentar</button></div>'; }
+}
+function pintar() {
+  if (!DATA.publicado) { $('app').innerHTML = '<div class="box">Las devoluciones todavía no están publicadas.<br>Te avisamos apenas estén listas. 💛</div>'; return; }
+  const o = DATA.obras;
+  if (!o.length) { $('app').innerHTML = '<div class="box">No encontramos obras de tu academia.</div>'; return; }
+  const c = { 1: 0, 2: 0, 3: 0 }; o.forEach(x => { const m = /^(\d)/.exec(x.puesto || ''); if (m && x.votos >= x.totalJurados) c[m[1]]++; });
+  let h = `<div class="resumen"><div class="r"><b>${o.length}</b><span>Obras</span></div><div class="r"><b style="color:var(--oro)">${c[1]}</b><span>🥇 1er puesto</span></div><div class="r"><b style="color:var(--plata)">${c[2]}</b><span>🥈 2do</span></div><div class="r"><b style="color:var(--bronce)">${c[3]}</b><span>🥉 3er</span></div></div>`;
+  if (DATA.mostrarPdf && o.length > 1) h += `<button class="btn" onclick="pdfTodas()" id="btn-todas">⬇ Descargar todas las devoluciones (PDF)</button>`;
+  h += o.map((x, i) => {
+    const coreo = x.competeCoreografia === 'Sí';
+    const jur = x.resultados.length ? x.resultados.map(r => `<div class="jur"><div class="jn">${esc(r.jurado)}</div><div class="pt gold-text">${nota(r.puntaje)}</div>
+        <div class="det">${pill(r.puesto)}${coreo && r.coreo ? `<span>Coreografía: <b>${nota(r.coreo)}</b></span> ${pill(r.puestoCoreo)}` : ''}</div>
+        ${DATA.mostrarAudios && r.audioUrl ? `<audio controls preload="none" src="${esc(audioSrc(r.audioUrl))}"></audio><div class="det"><a href="${esc(r.audioUrl)}" target="_blank" rel="noopener" style="color:var(--gold-l)">Abrir audio en Drive ↗</a></div>` : ''}</div>`).join('')
+      : '<div class="sin">Todavía no hay calificaciones cargadas para esta obra.</div>';
+    return `<div class="obra"><div class="top"><div class="n gold-text"><small>N°</small>${x.orden}</div><div style="min-width:0">
+        <div class="t">${esc(x.obra)}</div><div class="m">${esc(x.modalidad)} · ${esc(x.categoria)} · ${esc(x.tipoParticipacion)}</div>
+        <div class="p">${esc((x.participantes || []).join(', '))}</div></div></div>
+      ${jur}
+      ${x.promedio != null ? `<div class="final"><div><div class="e">Promedio del jurado</div><div class="v">${nota(x.promedio)}</div></div><div style="text-align:right"><div class="e">Resultado</div><div class="pu gold-text">${esc(x.puesto)}</div></div></div>
+        ${coreo && x.promedioCoreo != null ? `<div class="final" style="padding-top:0"><div><div class="e">Coreografía</div><div class="v" style="font-size:1.1rem">${nota(x.promedioCoreo)}</div></div><div class="pu gold-text" style="font-size:1rem">${esc(x.puestoCoreo)}</div></div>` : ''}` : ''}
+      ${(x.premiosGanados || []).map(p => `<div class="premio" style="margin-top:12px">🏆 Premio especial: ${esc(p.premio)}${p.ganador ? ' — ' + esc(p.ganador) : ''}</div>`).join('')}
+      ${DATA.mostrarPdf ? `<div class="acc"><button class="btn-pdf" onclick="pdf(${i},this)">⬇ Descargar PDF de devolución</button></div>` : ''}
+    </div>`;
+  }).join('');
+  $('app').innerHTML = h;
+}
+async function pdf(i, b) {
+  const t = b.textContent; b.disabled = true; b.textContent = 'Armando PDF…';
+  try { const o = DATA.obras[i]; const d = await CDCPDF.devolucion(o, { logo: 'logo.png' }); d.save(CDCPDF.nombreArchivo(o)); }
+  catch (e) { alert('No se pudo generar el PDF: ' + e.message); }
+  b.disabled = false; b.textContent = t;
+}
+async function pdfTodas() {
+  const b = $('btn-todas'), t = b.textContent; b.disabled = true; b.textContent = 'Armando PDF…';
+  try { let d = null; for (const o of DATA.obras) d = await CDCPDF.devolucion(o, { logo: 'logo.png', doc: d }); d.save('Devoluciones CDC 2026 - ' + DATA.nombre.replace(/[\\/:*?"<>|]/g, '') + '.pdf'); }
+  catch (e) { alert('No se pudo generar el PDF: ' + e.message); }
+  b.disabled = false; b.textContent = t;
+}
+try { const g = JSON.parse(sessionStorage.getItem(SS) || 'null'); if (g) entrar(g); } catch (e) {}
+</script>
+</body>
+</html>
