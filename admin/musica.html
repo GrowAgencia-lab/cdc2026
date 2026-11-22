@@ -89,7 +89,8 @@ button{font-family:inherit;cursor:pointer}
   <div class="header">
     <img src="../logo.png" alt=""/>
     <div><h1 class="gold-text">Panel de Música</h1><p>CUP Dance Competition 2026 · uso interno · para el DJ</p></div>
-    <a class="volver" href="./">← Panel admin</a>
+    <a class="volver hidden" id="volver" href="./">← Panel admin</a>
+    <button class="volver hidden" id="salir-dj" onclick="salirDJ()" style="background:none;cursor:pointer">Salir</button>
   </div>
 
   <div class="card login hidden" id="login">
@@ -160,11 +161,12 @@ async function entrar(c) {
   try {
     const j = await getJson({ accion: 'musicaOrden' });
     if (!j.ok) throw new Error(j.error || 'Contraseña incorrecta');
-    ss('cdc_admin', c);
+    if (j.rol === 'dj') { ss('cdc_dj', c); $('salir-dj').classList.remove('hidden'); }
+    else { ss('cdc_admin', c); $('volver').classList.remove('hidden'); }
     $('login').classList.add('hidden'); $('app').classList.remove('hidden');
     mostrar(j);
   } catch (e) {
-    ss('cdc_admin', null);
+    ss('cdc_admin', null); ss('cdc_dj', null);
     $('app').classList.add('hidden'); $('login').classList.remove('hidden');
     $('login-err').textContent = e.message;
   }
@@ -280,7 +282,8 @@ async function generarCarpeta() {
 }
 
 /* ---------- INICIO ---------- */
-const guardada = sg('cdc_admin');
+function salirDJ() { ss('cdc_dj', null); location.reload(); }
+const guardada = sg('cdc_admin') || sg('cdc_dj');
 if (guardada) entrar(guardada); else $('login').classList.remove('hidden');
 </script>
 </body>
