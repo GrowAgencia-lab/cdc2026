@@ -9,9 +9,6 @@
 <link rel="icon" href="logo.png"/>
 <link rel="apple-touch-icon" href="logo.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="devolucion-pdf.js?v=2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0B0A08;--bg2:#14120E;--card:#1A1712;--line:#3A3122;--line2:#5A4A2A;--gold:#D4A537;--gold-l:#F5D77A;--gold-d:#8C6418;--txt:#F4EEE1;--txt2:#B9AD92;--muted:#857B67;--ok:#4ADE80;--err:#F87171;
@@ -44,7 +41,7 @@ button,input{font-family:inherit}
 .ayuda a,.contacto a{color:var(--gold-l);font-weight:700;text-decoration:none}
 .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--txt2)}
 .resumen{display:flex;gap:8px;flex-wrap:wrap}
-.resumen .r{flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.resumen .r{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
 .resumen .r b{font-family:var(--disp);font-size:1.6rem;display:block;line-height:1}
 .resumen .r span{font-size:.66rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.8px}
 .obra{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
@@ -144,9 +141,10 @@ function pintar() {
   if (!DATA.publicado) { $('app').innerHTML = '<div class="box">Las devoluciones todavía no están publicadas.<br>Te avisamos apenas estén listas. 💛</div>'; return; }
   const o = DATA.obras;
   if (!o.length) { $('app').innerHTML = '<div class="box">No encontramos obras de tu academia.</div>'; return; }
-  const c = { 1: 0, 2: 0, 3: 0 }; o.forEach(x => { const m = /^(\d)/.exec(x.puesto || ''); if (m && x.votos >= x.totalJurados) c[m[1]]++; });
-  let h = `<div class="resumen"><div class="r"><b>${o.length}</b><span>Obras</span></div><div class="r"><b style="color:var(--oro)">${c[1]}</b><span>🥇 1er puesto</span></div><div class="r"><b style="color:var(--plata)">${c[2]}</b><span>🥈 2do</span></div><div class="r"><b style="color:var(--bronce)">${c[3]}</b><span>🥉 3er</span></div></div>`;
-  if (DATA.mostrarPdf && o.length > 1) h += `<button class="btn" onclick="pdfTodas()" id="btn-todas">⬇ Descargar todas las devoluciones (PDF)</button>`;
+  // Solo se muestran los jurados que pusieron nota
+  o.forEach(x => x.resultados = (x.resultados || []).filter(r => r.puntaje != null && r.puntaje !== ''));
+  const c = { 1: 0, 2: 0, 3: 0 }; o.forEach(x => { const m = /^(\d)/.exec(x.puesto || ''); if (m && x.promedio != null) c[m[1]]++; });
+  let h = `<div class="resumen"><div class="r"><b>${o.length}</b><span>Obras</span></div><div class="r"><b style="color:var(--oro)">${c[1]}</b><span>🥇 1er</span></div><div class="r"><b style="color:var(--plata)">${c[2]}</b><span>🥈 2do</span></div><div class="r"><b style="color:var(--bronce)">${c[3]}</b><span>🥉 3er</span></div></div>`;
   h += o.map((x, i) => {
     const coreo = x.competeCoreografia === 'Sí';
     const jur = x.resultados.length ? x.resultados.map(r => `<div class="jur"><div class="jn">${esc(r.jurado)}</div><div class="pt gold-text">${nota(r.puntaje)}</div>
@@ -159,22 +157,10 @@ function pintar() {
       ${jur}
       ${x.promedio != null ? `<div class="final"><div><div class="e">Promedio del jurado</div><div class="v">${nota(x.promedio)}</div></div><div style="text-align:right"><div class="e">Resultado</div><div class="pu gold-text">${esc(x.puesto)}</div></div></div>
         ${coreo && x.promedioCoreo != null ? `<div class="final" style="padding-top:0"><div><div class="e">Coreografía</div><div class="v" style="font-size:1.1rem">${nota(x.promedioCoreo)}</div></div><div class="pu gold-text" style="font-size:1rem">${esc(x.puestoCoreo)}</div></div>` : ''}` : ''}
-      ${DATA.mostrarPdf ? `<div class="acc"><button class="btn-pdf" onclick="pdf(${i},this)">⬇ Descargar PDF de devolución</button></div>` : ''}
+      ${DATA.mostrarPdf && x.pdfUrl ? `<div class="acc"><a class="btn-pdf" style="text-decoration:none" href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">📄 Ver / descargar PDF de devolución</a></div>` : ''}
     </div>`;
   }).join('');
   $('app').innerHTML = h;
-}
-async function pdf(i, b) {
-  const t = b.textContent; b.disabled = true; b.textContent = 'Armando PDF…';
-  try { const o = DATA.obras[i]; const d = await CDCPDF.devolucion(o, { logo: 'logo.png' }); d.save(CDCPDF.nombreArchivo(o)); }
-  catch (e) { alert('No se pudo generar el PDF: ' + e.message); }
-  b.disabled = false; b.textContent = t;
-}
-async function pdfTodas() {
-  const b = $('btn-todas'), t = b.textContent; b.disabled = true; b.textContent = 'Armando PDF…';
-  try { let d = null; for (const o of DATA.obras) d = await CDCPDF.devolucion(o, { logo: 'logo.png', doc: d }); d.save('Devoluciones CDC 2026 - ' + DATA.nombre.replace(/[\\/:*?"<>|]/g, '') + '.pdf'); }
-  catch (e) { alert('No se pudo generar el PDF: ' + e.message); }
-  b.disabled = false; b.textContent = t;
 }
 try { const g = JSON.parse(sessionStorage.getItem(SS) || 'null'); if (g) entrar(g); } catch (e) {}
 </script>
