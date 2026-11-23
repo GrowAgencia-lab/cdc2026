@@ -747,7 +747,7 @@ function pintarAccesos() {
   const l = D.accesos.filter(a => !q || clave(a.academia).includes(q));
   window._msgs = [];
   $('tab-acc').innerHTML = `<table><tr><th>Academia</th><th class="c">Obras</th><th>PIN</th><th>Teléfono</th><th></th></tr>
-    ${l.map(a => { const msg = `Hola, ${a.academia}! 👋\nYa están disponibles las devoluciones del jurado de *CUP Dance Competition 2026* 🏆\n\nIngresá acá: ${PORTAL_URL}\nAcademia: ${a.academia}\nPIN: *${a.pin}*\n\nVas a ver los puntajes, los audios de cada jurado y el PDF de devolución de cada obra.`;
+    ${l.map(a => { const msg = `Hola, ${a.academia}! 👋\nTe compartimos tu acceso al *Portal de Devoluciones* de *CUP Dance Competition 2026* 🏆\n\n🔗 Link: ${PORTAL_URL}\n🏫 Academia: ${a.academia}\n🔑 Tu contraseña (PIN): *${a.pin}*\n\nGuardá este mensaje: esta es la contraseña de tu academia para ingresar.\n\n⏳ El portal se habilitará *al finalizar la competencia*. Ahí vas a poder ver los puntajes, escuchar los audios de cada jurado y descargar el PDF de devolución de cada obra.\n\n¡Gracias por participar! 💛`;
       const w = telWa(a.telefono); const ix = D.accesos.indexOf(a); window._msgs[ix] = msg;
       return `<tr><td><b>${esc(a.academia)}</b>${a.director ? `<br><span class="muted">${esc(a.director)}</span>` : ''}</td><td class="c">${cnt[clave(a.academia)] || 0}</td>
       <td><b style="font-family:monospace;font-size:.95rem;color:var(--gold-l)">${esc(a.pin)}</b> <button class="btn-sm" onclick="cambiarPin(${ix})">✏️</button></td>
